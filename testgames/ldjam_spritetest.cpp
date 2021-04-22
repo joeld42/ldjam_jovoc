@@ -8,6 +8,7 @@
 #define SOKOL_GLES2
 #include "sokol_gfx.h"
 #include "sokol_fetch.h"
+#include "sokol_time.h"
 #include "sokol_gl.h"
 #include "sokol_debugtext.h"
 #include "emsc.h"
@@ -17,6 +18,8 @@
 #include "glm/mat4x4.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
+#include "glm/gtc/random.hpp"
+#include "glm/gtx/color_space.hpp"
 
 #include "tk_sprite.h"
 
@@ -30,11 +33,27 @@ typedef struct {
 // NOTES: sgl_begin_line_loop
 static void draw();
 
+typedef struct TestThing_s
+{
+    glm::vec3 pos;
+    glm::vec3 vel;
+    glm::vec4 tint;
+    float ang;
+    float rot;
+    float scl;
+    TKSpriteHandle sprite;
+} TestThing;
+
+#define NUM_THINGS (300)
 typedef struct GameState_s
 {
     TKSpriteHandle spritePlayer;
     TKSpriteHandle spriteItems[200];
 
+    TestThing thing[NUM_THINGS];
+    uint64_t ticks;
+
+    float angleBGSprite, angleFGSprite;
 } GameState;
 GameState game;
 
@@ -42,6 +61,9 @@ int main()
 {
 	// setup WebGL1 context, no antialias
 	emsc_init("#canvas", EMSC_NONE );
+
+    // setup timer
+    stm_setup();
 
 	// setup sokol_gfx
 	sg_desc desc = {};
@@ -245,9 +267,34 @@ int main()
     };
 
     //game.spriteItems = tk_sprite_make_px( "genericItems_spritesheet_colored.png", (TKSpritePixelRect){ .x = 0, .y = 322, .width = 162, .height = 94 } );
-    for (int i=0; i < sizeof(itemRects)/sizeof(itemRects[0]); i++)
+    int numItemSprites = sizeof(itemRects)/sizeof(itemRects[0]);
+    for (int i=0; i < numItemSprites; i++)
     {
         game.spriteItems[i] = tk_sprite_make_px( "genericItems_spritesheet_colored.png",  itemRects[i] );
+    }
+
+    // Now init the things
+    for (int i=0; i < NUM_THINGS; i++)
+    {
+        TestThing thing = {}; 
+        int thingIndex = glm::linearRand( 0, numItemSprites );
+        glm::vec2 p2 = glm::linearRand( glm::vec2( -1.0f, -1.0f), glm::vec2( 1.0f, 1.0f) );
+
+        glm::vec2 vel = glm::linearRand( glm::vec2( -1.0f, -1.0f), glm::vec2( 1.0f, 1.0f) );
+
+        thing.pos = glm::vec3( p2.x, p2.y, 0.0 );
+        thing.vel = glm::vec3( vel.x, vel.y, 0.0 );
+        glm::vec3 cc = glm::rgbColor( glm::vec3( glm::linearRand( 0.0f, 360.0f), 1.0f, 0.5f) );
+        thing.tint = glm::vec4( cc.x, cc.y, cc.z, 1.0f );
+
+        thing.ang = glm::linearRand( 0.0f, 360.0f );
+        thing.rot = glm::linearRand( -100.0f, 100.0f );
+
+        thing.scl = glm::linearRand( 0.7f, 1.2f );
+        
+        thing.sprite = game.spriteItems[thingIndex];
+
+        game.thing[i] = thing;
     }
 
 	emscripten_set_main_loop( draw, 0, 1 );
@@ -258,15 +305,28 @@ void draw()
     /* pump the sokol-fetch message queues, and invoke response callbacks */
     sfetch_dowork();
 
-	/* animate clear colors */
-	// float g = pass_action.colors[0].val[1] + 0.01f;
-	// if (g > 1.0f) g = 0.0f;
-	// pass_action.colors[0].val[1] = g;
+	/* animate our things */
+    uint64_t frame_ticks = stm_laptime( &game.ticks );
+    float dt = stm_sec( frame_ticks );
 
-	/* draw one frame */
-	// sg_begin_default_pass( &pass_action, emsc_width(), emsc_height() );
-	// sg_end_pass();
-	// sg_commit();
+    for (int i=0; i < NUM_THINGS; i++)
+    {
+        TestThing *tt = game.thing + i;
+        tt->pos = tt->pos + tt->vel * dt;
+        // crappy collision
+        if ((tt->pos.x > 1.0f) || (tt->pos.x < -1.0f)) {
+            tt->vel.x *= -1.0f;
+        }
+
+        if ((tt->pos.y > 1.0f) || (tt->pos.y < -1.0f)) {
+            tt->vel.y *= -1.0f;
+        }
+
+        tt->ang += tt->rot * dt;
+    }
+
+    game.angleFGSprite += 4.0f * dt;
+    game.angleBGSprite -= 3.2f * dt;
 
 	params_t vs_params = {};
 	
@@ -311,14 +371,18 @@ void draw()
     //sg_draw(0, 6, 1);
 
     // draw sprites
-    tk_push_sprite( game.spritePlayer, glm::vec3( 0.0f, 0.3f, 0.0f ));
+    glm::vec4 white = glm::vec4( 1.0f, 1.0f, 1.0f, 1.0f );
+    tk_push_sprite_all( game.spritePlayer, glm::vec3( 0.0f, 0.3f, 0.0f ), 20.0f, white, game.angleBGSprite );
     
-    for (int i=0; i < 20; i++)
+    for (int i=0; i < NUM_THINGS; i++)
     {
-        tk_push_sprite( game.spriteItems[i], glm::vec3( -1.0 + (0.21f * i), -0.25f, 0.0f ));
+        TestThing *thing = game.thing + i;
+        //tk_push_sprite( thing->sprite, thing->pos );
+        tk_push_sprite_all( thing->sprite, thing->pos, thing->scl, thing->tint, thing->ang );
+        //tk_push_sprite( game.spriteItems[i], glm::vec3( -1.0 + (0.21f * i), -0.25f, 0.0f ));
     }
 
-    tk_push_sprite( game.spritePlayer, glm::vec3( 0.5f, 0.0f, 0.0f ));
+    tk_push_sprite_all( game.spritePlayer, glm::vec3( 0.5f, 0.0f, 0.0f ), 10.0f, white, game.angleFGSprite );
 
 
     

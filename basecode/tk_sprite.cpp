@@ -395,19 +395,19 @@ void _tk_sprite_pushtri( TKSpriteSystem *sys, TKSpriteGroup *sg, uint32_t ndxA, 
 
 void tk_push_sprite( TKSpriteHandle sh, glm::vec3 pos )
 {
-	tk_push_sprite_all( sh, pos, 1.0f, glm::vec4( 1.0f ) );
+	tk_push_sprite_all( sh, pos, 1.0f, glm::vec4( 1.0f ), 0.0f );
 }
 void tk_push_sprite_scaled( TKSpriteHandle sh, glm::vec3 pos, float scale )
 {
-	tk_push_sprite_all( sh, pos, scale, glm::vec4( 1.0f ) );
+	tk_push_sprite_all( sh, pos, scale, glm::vec4( 1.0f ), 0.0f );
 }
 
 void tk_push_sprite_tint( TKSpriteHandle sh, glm::vec3 pos, glm::vec4 color )
 {
-	tk_push_sprite_all( sh, pos, 1.0f, color );
+	tk_push_sprite_all( sh, pos, 1.0f, color, 0.0f );
 }
 
-void tk_push_sprite_all( TKSpriteHandle sh, glm::vec3 pos, float scale, glm::vec4 color )
+void tk_push_sprite_all( TKSpriteHandle sh, glm::vec3 pos, float scale, glm::vec4 color, float angle_deg )
 {
 	// Get the sprite group
 	TKSpriteSystem *sys = &g_defaultSpriteSystem;
@@ -417,32 +417,51 @@ void tk_push_sprite_all( TKSpriteHandle sh, glm::vec3 pos, float scale, glm::vec
 	// Can this sprite be appended to the current batch or do we need a new one?	
 	int sdefIndex = sdef - sys->spritedefs;
 	if ((!sys->currBatch) || (sys->currBatch->groupIndex != sdef->sg_ndx))  {		
-		sdtx_printf("pushsprite: new batch for sdef %d (group %d)\n", sdefIndex, sdef->sg_ndx );
+		//sdtx_printf("pushsprite: new batch for sdef %d (group %d)\n", sdefIndex, sdef->sg_ndx );
 		sys->currBatch = sys->spriteBatches + sys->numBatches++;
 		sys->currBatch->groupIndex = sdef->sg_ndx;
 		sys->currBatch->startIndex = sys->numIndices;
 		sys->currBatch->numIndices = 0;
 	}	else {
-		sdtx_printf("pushsprite: adding to current batch, sdef %d (group %d)\n", sdefIndex, sdef->sg_ndx );
+		//sdtx_printf("pushsprite: adding to current batch, sdef %d (group %d)\n", sdefIndex, sdef->sg_ndx );
 	}
 
 	//float sz = 0.2f * scale;
 	// TODO: precalc this size in sdef
 	float szX = sys->info.pixelSizeX * sdef->pxrect.width * scale;
-	float szY = sys->info.pixelSizeY * sdef->pxrect.height * scale ;
+	float szY = sys->info.pixelSizeY * sdef->pxrect.height * scale;
+	
+	glm::vec3 dir_right( szX, 0.0f, 0.0f );
+	glm::vec3 dir_up( 0.0f, szY, 0.0f );
+	if (fabs(angle_deg) > 0.0001f) {
+		float angle_rad = angle_deg * (M_PI / 360.0f);
+		float cs = cos(angle_rad);
+		float sn = sin(angle_rad);
+
+		dir_right = glm::vec3( dir_right.x * cs - dir_right.y * sn,
+						  dir_right.x * sn + dir_right.y * cs, 0.0f );
+
+		dir_up = glm::vec3( dir_up.x * cs - dir_up.y * sn,
+						  dir_up.x * sn + dir_up.y * cs, 0.0f );
+		
+	}
 	
 	// Upper quad
 	glm::vec4 st00 = sdef->st0;
 	glm::vec4 st11 = sdef->st1;
 	glm::vec4 st10 = glm::vec4( st11.x, st00.y, st11.z, st00.w );		
 	glm::vec4 st01 = glm::vec4( st00.x, st11.y, st00.z, st11.w );	
-	glm::vec3 pA = pos + glm::vec3( -szX,  szY, 0.0f ); 
+	//glm::vec3 pA = pos + glm::vec3( -szX,  szY, 0.0f ); 
+	glm::vec3 pA = pos - dir_right + dir_up;
 	glm::vec4 stA = st00;
-	glm::vec3 pB = pos + glm::vec3(  szX,  szY, 0.0f );
+	//glm::vec3 pB = pos + glm::vec3(  szX,  szY, 0.0f );
+	glm::vec3 pB = pos + dir_right + dir_up;
 	glm::vec4 stB = st10;
-	glm::vec3 pC = pos + glm::vec3( -szX, -szY, 0.0f );
+	//glm::vec3 pC = pos + glm::vec3( -szX, -szY, 0.0f );
+	glm::vec3 pC = pos - dir_right - dir_up;
 	glm::vec4 stC = st01;
-	glm::vec3 pD = pos + glm::vec3(  szX, -szY, 0.0f );
+	//glm::vec3 pD = pos + glm::vec3(  szX, -szY, 0.0f );
+	glm::vec3 pD = pos + dir_right - dir_up;
 	glm::vec4 stD = st11;
 
 	uint32_t ndxA = _tk_sprite_pushvvert( sys, sg, pA, stA, color );
@@ -476,7 +495,7 @@ void tk_sprite_drawgroups( glm::mat4 mvp )
 		sg_apply_bindings( &(sys->bind) );    
 	    sg_apply_uniforms( SG_SHADERSTAGE_VS, 0, &params, sizeof(params));
 
-	    sdtx_printf("batch %d, start %d num %d\n", i, batch->startIndex, batch->numIndices );
+	    //sdtx_printf("batch %d, start %d num %d\n", i, batch->startIndex, batch->numIndices );
 	    sg_draw( batch->startIndex, batch->numIndices, 1);
 	}
 

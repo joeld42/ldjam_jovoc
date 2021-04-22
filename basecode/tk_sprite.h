@@ -35,7 +35,9 @@ TKSpriteHandle tk_sprite_make_px( const char *path, TKSpritePixelRect pxrect );
 void tk_push_sprite( TKSpriteHandle sh, glm::vec3 pos );
 void tk_push_sprite_scaled( TKSpriteHandle sh, glm::vec3 pos, float scale );
 void tk_push_sprite_tint( TKSpriteHandle sh, glm::vec3 pos, glm::vec4 color );
-void tk_push_sprite_all( TKSpriteHandle sh, glm::vec3 pos, float scale, glm::vec4 color );
+void tk_push_sprite_rotated( TKSpriteHandle sh, glm::vec3 pos, float angle_deg );
+
+void tk_push_sprite_all( TKSpriteHandle sh, glm::vec3 pos, float scale, glm::vec4 color, float angle_deg );
 
 
 void tk_sprite_drawgroups( glm::mat4 mvp );
