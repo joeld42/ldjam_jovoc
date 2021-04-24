@@ -494,12 +494,12 @@ void tk_push_sprite_tilemap( TKSpriteHandle sh, RoomInfo *map, glm::vec3 roomPos
 	// Now push all the tiles
 	float szX = 1.0f;
 	float szY = 1.0f;
-	//glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };	
+	glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };	
 	for (int i=0; i < map->numTiles; i++)
 	{
 		TileInfo *tt = map->tiles + i;
 
-		glm::vec4 color = glm::vec4( glm::rgbColor( glm::vec3( sin((float)(i * 1723.45)) * 360.0f, 0.3f, 0.9f) ), 1.0f) ;
+		//glm::vec4 color = glm::vec4( glm::rgbColor( glm::vec3( sin((float)(i * 1723.45)) * 360.0f, 0.3f, 0.9f) ), 1.0f) ;
 
 		glm::vec3 pos = glm::vec3( (float)tt->tx, (float)tt->ty, 0.0f ) + roomPos;
 
