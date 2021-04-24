@@ -21,6 +21,19 @@
 #include "glm/gtc/random.hpp"
 #include "glm/gtx/color_space.hpp"
 
+#include <stdio.h>  // needed by fontstash's IO functions even though they are not used
+#define FONTSTASH_IMPLEMENTATION
+#if defined(_MSC_VER )
+#pragma warning(disable:4996)   // strncpy use in fontstash.h
+#endif
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic ignored "-Wunused-function"
+#endif
+#define FONTSTASH_IMPLEMENTATION
+#include "fontstash/fontstash.h"
+#define SOKOL_FONTSTASH_IMPL
+#include "sokol_fontstash.h"
+
 #include "tk_sprite.h"
 
 static sg_pass_action pass_action;
@@ -29,6 +42,16 @@ bool testimgloaded = false;
 typedef struct {
     glm::mat4 mvp;
 } params_t;
+
+typedef struct FontInfo_s {
+    FONScontext* fons;
+    //float dpi_scale;
+    int font_normal;
+    uint8_t font_normal_data[256 * 1024];
+} FontInfo;
+static FontInfo font;
+
+
 
 // NOTES: sgl_begin_line_loop
 static void draw();
@@ -56,6 +79,13 @@ typedef struct GameState_s
     float angleBGSprite, angleFGSprite;
 } GameState;
 GameState game;
+
+static void font_normal_loaded(const sfetch_response_t* response) {
+    if (response->fetched) {
+        font.font_normal = fonsAddFontMem( font.fons, (const char *)"sans", (unsigned char *)response->buffer_ptr, response->fetched_size,  false);
+    }
+}
+
 
 int main()
 {
@@ -89,6 +119,20 @@ int main()
         .num_lanes = 1
 	};
     sfetch_setup(&sfetch_desc);
+
+    // Setup fonts
+    int atlas_dim = 512;
+    FONScontext* fons_context = sfons_create(atlas_dim, atlas_dim, FONS_ZERO_TOPLEFT);
+    font.fons = fons_context;
+    font.font_normal = FONS_INVALID;
+
+    sfetch_request_t fontRequest = {     
+        .path = "bobcaygr.ttf",
+        .callback = font_normal_loaded,
+        .buffer_ptr = font.font_normal_data,
+        .buffer_size = sizeof(font.font_normal_data)
+    };
+    sfetch_send(&(fontRequest));
 
     float pxSize = 1.0 / emsc_height();
     TKSpriteSystemDesc spriteDesc = {
@@ -305,6 +349,16 @@ void draw()
     /* pump the sokol-fetch message queues, and invoke response callbacks */
     sfetch_dowork();
 
+    /* text rendering via fontstash.h */
+    float sx, sy, dx, dy, lh = 0.0f;
+    uint32_t white32 = sfons_rgba(255, 255, 255, 255);
+    uint32_t black32 = sfons_rgba(0, 0, 0, 255);
+    uint32_t brown32 = sfons_rgba(192, 128, 0, 128);
+    uint32_t blue32  = sfons_rgba(0, 192, 255, 255);
+    fonsClearState(font.fons);
+
+    FONScontext* fs = font.fons;
+
 	/* animate our things */
     uint64_t frame_ticks = stm_laptime( &game.ticks );
     float dt = stm_sec( frame_ticks );
@@ -385,14 +439,44 @@ void draw()
     tk_push_sprite_all( game.spritePlayer, glm::vec3( 0.5f, 0.0f, 0.0f ), 10.0f, white, game.angleFGSprite );
 
 
-    
     tk_sprite_drawgroups( vs_params.mvp );
+
+    sgl_ortho(0.0f, (float)emsc_width(), (float)emsc_height(), 0.0f, -1.0f, +1.0f);
+
+    //draw text
+    float cx, cy;
+    cx = 2.0f;
+    cy = 150.0f;
+
+    sgl_c3f( 0.0f, 1.0f, 1.0f );
+    sgl_begin_line_strip();
+    
+    sgl_v3f( 0, 0, 0.0f );
+    sgl_v3f(  10, 0, 0.0f );
+    sgl_v3f(  10,  10, 0.0f );
+    sgl_v3f( 0,  10, 0.0f );
+
+    sgl_v3f( 0, 0, 0.0f );
+    sgl_end();
+    
+
+    
+    if (font.font_normal != FONS_INVALID) {
+        fonsSetFont(fs, font.font_normal);
+        fonsSetSize(fs, 100.0f );
+        fonsSetColor(fs, white32 );
+        cx = fonsDrawText(fs, cx, cy, "Game Text", NULL);
+        sdtx_printf("Drawing game text\n");
+    }
 
     // draw sgl stuff
     sgl_draw();
 
     // draw sokol debug text
     sdtx_draw();
+
+    /* flush fontstash's font atlas to sokol-gfx texture */
+    sfons_flush(fs);
 
     sg_end_pass();
     sg_commit();
