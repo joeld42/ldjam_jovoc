@@ -10,6 +10,11 @@ typedef struct TileInfo_s {
     glm::vec2 st1;
 } TileInfo;
 
+typedef struct JournalText_s {
+	int tx, ty, w, h;
+	char *text;
+	bool viewed;
+} JournalText;
 
 #define MAX_TILES_PER_ROOM (500)
 typedef struct RoomInfo_s {
@@ -21,7 +26,12 @@ typedef struct RoomInfo_s {
     // NOTE: NOT in grid order, may be multiple layers too
     int numTiles;
     TileInfo tiles[ MAX_TILES_PER_ROOM ];
+
+    JournalText journal;
+
 } RoomInfo;
+
+
 
 #define MAX_ROOMS (100)
 typedef struct WorldMap_s {

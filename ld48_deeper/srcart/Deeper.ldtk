@@ -9,7 +9,7 @@
 		"url": "https://ldtk.io"
 	},
 	"jsonVersion": "0.9.3",
-	"nextUid": 16,
+	"nextUid": 20,
 	"worldLayout": "GridVania",
 	"worldGridWidth": 400,
 	"worldGridHeight": 275,
@@ -183,6 +183,52 @@
 					"textLanguageMode": null
 				}
 			]
+		},
+		{
+			"identifier": "JournalText",
+			"uid": 18,
+			"tags": [],
+			"width": 25,
+			"height": 25,
+			"resizableX": true,
+			"resizableY": true,
+			"keepAspectRatio": false,
+			"fillOpacity": 0.28,
+			"lineOpacity": 1,
+			"hollow": false,
+			"color": "#EAC498",
+			"renderMode": "Rectangle",
+			"showName": true,
+			"tilesetId": null,
+			"tileId": null,
+			"tileRenderMode": "FitInside",
+			"maxCount": 0,
+			"limitScope": "PerLevel",
+			"limitBehavior": "MoveLastOne",
+			"pivotX": 0,
+			"pivotY": 0,
+			"fieldDefs": [
+				{
+					"identifier": "StoryText",
+					"__type": "String",
+					"uid": 19,
+					"type": "F_Text",
+					"isArray": false,
+					"canBeNull": true,
+					"arrayMinLength": null,
+					"arrayMaxLength": null,
+					"editorDisplayMode": "Hidden",
+					"editorDisplayPos": "Above",
+					"editorAlwaysShow": false,
+					"editorCutLongValues": true,
+					"min": null,
+					"max": null,
+					"regex": null,
+					"acceptFileTypes": null,
+					"defaultOverride": null,
+					"textLanguageMode": null
+				}
+			]
 		}
 	], "tilesets": [
 		{
@@ -205,10 +251,39 @@
 				"averageColors": "fba8fcb9f765f765fbb9fcbafcb9fbb9fba9fcb9fba9fba8fba9fcb9fcbafba80000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000fcb9fdcaf886f554faa8fcb9fcb9fbb9fba9fcb9fbb9fba9fbb9fcb9fddbfcca0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000fcb9fba9fa84fa84fa94f864f974f974f974fa84f975fa84fa84fa94fba8fcb90000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000fba8fcb9fa84fb94fb94fa94fb94fb94fb94fa94f863fb94fa94fa84fcb9fcba0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f986faa8fa84fb94f965f954f953f975fb94f984fa94fa94fa99fa99fcb9fcb90000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f997f9a7fa94fa94f975f964f964f975fb94fa84fa94fa94f99bf67afcb9fcb90000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f986faa8fa84fa94fb94fb94fb94fb94fb94fb94fb94fa84f458f579fbb9fbb90000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000fba8fcb9fa84fa84fa74fb94fb94fb94fb94fa84fa94fa94fa84fa84f997faa80000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000fccafcbafa84fb84fa94fb94fa94fa94fa84fa84fa84fa84fa84fa84fa98faa80000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000fccafddbfdcafccafcbafcbafbb9fba9fba9fcbafcbafcbafccafccafdcafba90000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000fba8fccafccafccafcb9fcb9fcb9fba9fba8fcb9fcb9fcb9fcb9fcb9fcb9fa970000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f8bbf9bcf577f567f9bbfaccf9bcf9bbf9bbf9bcf9bbf8abf9bbf9ccfaccf8bb0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f9bcfacdf688f455f8aaf9bcf9ccf9bbf9bbf9bcf9bbf9bbf9bbf9ccfbddfacc0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f9bcf9abf4aaf4aaf4aaf488f499f489f489f4aaf598f4aaf4aaf4aaf8abf9bc0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f8abf9bcf4aaf4abf4abf4aaf4abf4abf4abf4aaf388f4abf4aaf4aaf9bcfacc0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f689f8abf4aaf4abf598f497f397f598f4abf499f4aaf4aaf9aaf999f9ccf9cc0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f799f78af4aaf4aaf598f498f498f598f4abf49af4aaf4aafb99fa66f9ccf9bc0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f689f89af4aaf4aaf4abf4abf4abf4abf4abf4abf4abf4aaf844f955f9bbf9bb0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f8abf9ccf4aaf4aaf4a9f4abf4abf4abf4abf4aaf4aaf4aaf4aaf49af799f8aa0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000faccfaccf4aaf4aaf4aaf4abf4aaf4aaf4aaf4aaf4aaf4aaf4aaf49af8aaf8aa0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000faccfbddfacdfaccfaccfaccf9bbf9bbf9abfaccfaccfaccfaccfaccfacdf9bb0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f8bbfaccfaccfaccf9ccf9ccf9ccf9bbf8abf9ccf9ccf9ccf9ccf9ccf9ccf7aa000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 			}
 		}
-	], "enums": [{ "identifier": "ActorType", "uid": 8, "values": [ { "id": "Player", "tileId": null, "color": 12399668, "__tileSrcRect": null }, { "id": "Person", "tileId": null, "color": 5868977, "__tileSrcRect": null } ], "iconTilesetUid": null, "externalRelPath": null, "externalFileChecksum": null }], "externalEnums": [], "levelFields": [] },
+	], "enums": [
+		{ "identifier": "ActorType", "uid": 8, "values": [ { "id": "Player", "tileId": null, "color": 12399668, "__tileSrcRect": null }, { "id": "Person", "tileId": null, "color": 5868977, "__tileSrcRect": null } ], "iconTilesetUid": null, "externalRelPath": null, "externalFileChecksum": null },
+		{ "identifier": "Zone", "uid": 16, "values": [
+			{ "id": "House", "tileId": null, "color": 0, "__tileSrcRect": null },
+			{ "id": "Garden", "tileId": null, "color": 0, "__tileSrcRect": null },
+			{ "id": "Pub", "tileId": null, "color": 0, "__tileSrcRect": null },
+			{ "id": "River", "tileId": null, "color": 0, "__tileSrcRect": null }
+		], "iconTilesetUid": null, "externalRelPath": null, "externalFileChecksum": null }
+	], "externalEnums": [], "levelFields": [
+		{
+			"identifier": "Zone",
+			"__type": "LocalEnum.Zone",
+			"uid": 17,
+			"type": { "id": "F_Enum", "params": [16] },
+			"isArray": false,
+			"canBeNull": false,
+			"arrayMinLength": null,
+			"arrayMaxLength": null,
+			"editorDisplayMode": "Hidden",
+			"editorDisplayPos": "Above",
+			"editorAlwaysShow": false,
+			"editorCutLongValues": true,
+			"min": null,
+			"max": null,
+			"regex": null,
+			"acceptFileTypes": null,
+			"defaultOverride": null,
+			"textLanguageMode": null
+		}
+	] },
 	"levels": [
 		{
-			"identifier": "Level_0",
+			"identifier": "LivingRoom",
 			"uid": 11,
 			"worldX": 0,
 			"worldY": 0,
@@ -216,14 +291,23 @@
 			"pxHei": 275,
 			"__bgColor": "#696A79",
 			"bgColor": null,
-			"useAutoIdentifier": true,
+			"useAutoIdentifier": false,
 			"bgRelPath": null,
 			"bgPos": null,
 			"bgPivotX": 0.5,
 			"bgPivotY": 0.5,
 			"__bgPos": null,
 			"externalRelPath": null,
-			"fieldInstances": [],
+			"fieldInstances": [{
+				"__identifier": "Zone",
+				"__value": "House",
+				"__type": "LocalEnum.Zone",
+				"defUid": 17,
+				"realEditorValues": [{
+					"id": "V_String",
+					"params": ["House"]
+				}]
+			}],
 			"layerInstances": [
 				{
 					"__identifier": "Entities",
@@ -240,7 +324,7 @@
 					"layerDefUid": 4,
 					"pxOffsetX": 0,
 					"pxOffsetY": 0,
-					"visible": false,
+					"visible": true,
 					"optionalRules": [],
 					"intGrid": [],
 					"intGridCsv": [],
@@ -305,26 +389,6 @@
 							"fieldInstances": []
 						},
 						{
-							"__identifier": "Actor",
-							"__grid": [9,5],
-							"__pivot": [0,0],
-							"__tile": null,
-							"width": 25,
-							"height": 25,
-							"defUid": 7,
-							"px": [225,125],
-							"fieldInstances": [{
-								"__identifier": "ActorType",
-								"__value": "Player",
-								"__type": "LocalEnum.ActorType",
-								"defUid": 9,
-								"realEditorValues": [{
-									"id": "V_String",
-									"params": ["Player"]
-								}]
-							}]
-						},
-						{
 							"__identifier": "Door",
 							"__grid": [0,5],
 							"__pivot": [0,0],
@@ -336,26 +400,26 @@
 							"fieldInstances": []
 						},
 						{
-							"__identifier": "Door",
-							"__grid": [6,5],
+							"__identifier": "JournalText",
+							"__grid": [2,7],
 							"__pivot": [0,0],
 							"__tile": null,
-							"width": 25,
-							"height": 25,
-							"defUid": 5,
-							"px": [150,125],
-							"fieldInstances": []
-						},
-						{
-							"__identifier": "Door",
-							"__grid": [9,5],
-							"__pivot": [0,0],
-							"__tile": null,
-							"width": 25,
-							"height": 25,
-							"defUid": 5,
-							"px": [225,125],
-							"fieldInstances": []
+							"width": 75,
+							"height": 50,
+							"defUid": 18,
+							"px": [50,175],
+							"fieldInstances": [{
+								"__identifier": "StoryText",
+								"__value": "I am hoping the quiet and peaceful of this cottage in countryside of Dordogne would be a salve for my much-frustrated writing.\nI mean to uncover the language of dreams. It feels important, almost urgent to do so. Therefore, this morning after waking I have resolved not to leave the house until I have learned five words of it.",
+								"__type": "String",
+								"defUid": 19,
+								"realEditorValues": [{
+									"id": "V_String",
+									"params": [
+										"I am hoping the quiet and peaceful of this cottage in countryside of Dordogne would be a salve for my much-frustrated writing.\nI mean to uncover the language of dreams. It feels important, almost urgent to do so. Therefore, this morning after waking I have resolved not to leave the house until I have learned five words of it."
+									]
+								}]
+							}]
 						}
 					]
 				},
@@ -396,20 +460,12 @@
 						{ "coordId": 32, "v": 0 },
 						{ "coordId": 47, "v": 0 },
 						{ "coordId": 48, "v": 0 },
-						{ "coordId": 51, "v": 0 },
-						{ "coordId": 52, "v": 0 },
-						{ "coordId": 53, "v": 0 },
 						{ "coordId": 63, "v": 0 },
 						{ "coordId": 64, "v": 0 },
-						{ "coordId": 67, "v": 0 },
 						{ "coordId": 79, "v": 0 },
-						{ "coordId": 83, "v": 0 },
-						{ "coordId": 84, "v": 0 },
 						{ "coordId": 96, "v": 0 },
-						{ "coordId": 99, "v": 0 },
 						{ "coordId": 111, "v": 0 },
 						{ "coordId": 112, "v": 0 },
-						{ "coordId": 115, "v": 0 },
 						{ "coordId": 127, "v": 0 },
 						{ "coordId": 128, "v": 0 },
 						{ "coordId": 143, "v": 0 },
@@ -432,9 +488,9 @@
 					],
 					"intGridCsv": [
 						1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,
-						0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,1,1,1,0,0,0,0,0,0,0,0,0,1,1,0,0,1,0,0,
-						0,0,0,0,0,0,0,0,0,1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,
-						0,0,0,0,0,0,1,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,
+						0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,
+						0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,
+						0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,
 						0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,0,0,1,1,1,1,1,1,
 						1
 					],
@@ -665,7 +721,7 @@
 			"bgPivotY": 0.5,
 			"__bgPos": null,
 			"externalRelPath": null,
-			"fieldInstances": [],
+			"fieldInstances": [{ "__identifier": "Zone", "__value": null, "__type": "LocalEnum.Zone", "defUid": 17, "realEditorValues": [] }],
 			"layerInstances": [
 				{
 					"__identifier": "Entities",
@@ -1039,7 +1095,7 @@
 			"bgPivotY": 0.5,
 			"__bgPos": null,
 			"externalRelPath": null,
-			"fieldInstances": [],
+			"fieldInstances": [{ "__identifier": "Zone", "__value": null, "__type": "LocalEnum.Zone", "defUid": 17, "realEditorValues": [] }],
 			"layerInstances": [
 				{
 					"__identifier": "Entities",
@@ -1416,7 +1472,7 @@
 			"bgPivotY": 0.5,
 			"__bgPos": null,
 			"externalRelPath": null,
-			"fieldInstances": [],
+			"fieldInstances": [{ "__identifier": "Zone", "__value": null, "__type": "LocalEnum.Zone", "defUid": 17, "realEditorValues": [] }],
 			"layerInstances": [
 				{
 					"__identifier": "Entities",
@@ -1791,7 +1847,7 @@
 			"bgPivotY": 0.5,
 			"__bgPos": null,
 			"externalRelPath": null,
-			"fieldInstances": [],
+			"fieldInstances": [{ "__identifier": "Zone", "__value": null, "__type": "LocalEnum.Zone", "defUid": 17, "realEditorValues": [] }],
 			"layerInstances": [
 				{
 					"__identifier": "Entities",

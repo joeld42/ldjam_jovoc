@@ -101,6 +101,7 @@ typedef struct GameState_s
 
     // UI stuff
     bool show_journal;
+    bool show_wordlist;
     bool show_dialog;
 
     glm::vec3 inputDir;
@@ -373,47 +374,63 @@ void frame()
 
 
     // Player movement
-    game.inputDir = glm::vec3( 0.0f );
-    if (game.keydown[ SAPP_KEYCODE_UP ]) {
-        game.inputDir += glm::vec3( 0.0f, 1.0f, 0.0f );
-    }
-    if (game.keydown[ SAPP_KEYCODE_DOWN ]) {
-        game.inputDir += glm::vec3( 0.0f, -1.0f, 0.0f );
-    }
-    if (game.keydown[ SAPP_KEYCODE_LEFT ]) {
-        game.inputDir += glm::vec3( -1.0f, 0.0f, 0.0f );
-    }
-    if (game.keydown[ SAPP_KEYCODE_RIGHT ]) {
-        game.inputDir += glm::vec3( 1.0f, 0.0f, 0.0f );
-    }
-
-    glm::vec3 newPlayerPos = game.player.pos + game.inputDir * (dt * 6.0f );
-
-    
-    float dtrav = glm::distance( game.player.pos, newPlayerPos );
-    game.player.travel += dtrav; // increase trav even if we're walking nowhere, so we animate into walls
-
-    // check collision
-    int tx = 0, ty = 0;
-    RoomInfo *room = room_for_world_pos( newPlayerPos );
-    bool didCollide = true;
-    if (room) {        
-        // get tile collision        
-        if (newPlayerPos.y < 0.0f) {
-            tx = (int)newPlayerPos.x - room->worldX;
-            ty = -((int)newPlayerPos.y - room->worldY);
-        } else {
-            tx = (int)newPlayerPos.x - room->worldX;
-            ty = -((int)(newPlayerPos.y + 1) - room->worldY);
-        }
-        
-        didCollide = room->collision[ty*16+tx];
-
-    }
-
-    if (!didCollide)
+    if ((!game.show_dialog) && (!game.show_journal) && (!game.show_wordlist))
     {
-        game.player.pos = newPlayerPos;
+        game.inputDir = glm::vec3( 0.0f );
+        if (game.keydown[ SAPP_KEYCODE_UP ]) {
+            game.inputDir += glm::vec3( 0.0f, 1.0f, 0.0f );
+        }
+        if (game.keydown[ SAPP_KEYCODE_DOWN ]) {
+            game.inputDir += glm::vec3( 0.0f, -1.0f, 0.0f );
+        }
+        if (game.keydown[ SAPP_KEYCODE_LEFT ]) {
+            game.inputDir += glm::vec3( -1.0f, 0.0f, 0.0f );
+        }
+        if (game.keydown[ SAPP_KEYCODE_RIGHT ]) {
+            game.inputDir += glm::vec3( 1.0f, 0.0f, 0.0f );
+        }
+
+        glm::vec3 newPlayerPos = game.player.pos + game.inputDir * (dt * 6.0f );
+
+        
+        float dtrav = glm::distance( game.player.pos, newPlayerPos );
+        game.player.travel += dtrav; // increase trav even if we're walking nowhere, so we animate into walls
+
+        // check collision
+        int tx = 0, ty = 0;
+        RoomInfo *room = room_for_world_pos( newPlayerPos );
+        bool didCollide = true;
+        if (room) {        
+            // get tile collision        
+            if (newPlayerPos.y < 0.0f) {
+                tx = (int)newPlayerPos.x - room->worldX;
+                ty = -((int)newPlayerPos.y - room->worldY);
+            } else {
+                tx = (int)newPlayerPos.x - room->worldX;
+                ty = -((int)(newPlayerPos.y + 1) - room->worldY);
+            }
+            
+            didCollide = room->collision[ty*16+tx];
+
+        }
+
+        if (!didCollide)
+        {
+            game.player.pos = newPlayerPos;
+
+            // Check if we're on a journal square
+            if (room && room->journal.text)
+            {
+                if (!room->journal.viewed)
+                {
+                    if ( (tx >= room.journal.tx) && (tx < room.journal.tx + room.journal.w) &&
+                         (ty >= room.journal.ty) && (ty < room.journal.ty + room.journal.h) ) {
+                        show_journal = true;
+                    }
+                }
+            }
+        }
+
     }
     
 
@@ -425,6 +442,8 @@ void frame()
     }
     game.camFocus = glm::mix( game.camFocus, game.camTarget,  0.05f );
     game.camHite = glm::mix( game.camHite, game.camHiteTarget, 0.05f );
+
+
 
     // ======================================================================
     //    Render the things  
@@ -526,7 +545,7 @@ void frame()
     //tk_push_sprite_scaled( game.spritePlayer, game.playerPos + glm::vec3( 0.0f, 0.5f, 0.0f), 30.0f );
     
     // Draw UI sprites on top
-    if (game.show_journal)
+    if ((game.show_journal) || (game.show_wordlist))
     {
         tk_push_sprite_scaled( game.spriteUIJournal, glm::vec3( canv_width / 2.0f, canv_height / 2.0f, 0.0f ), 500.0f );
 
@@ -568,6 +587,11 @@ void frame()
     {
     
         if (game.show_journal) {
+            float col_journalstart = (canv_width / 2.0f) - 300.0f;
+            float col_journalend = (canv_width / 2.0f) + 100.0f;
+            wrap_dream_text( col_journalstart, col_journalend, 120.0f, currRoom->journal.text );
+
+        } else if (game.show_wordlist) {
             float col_dreamword = (canv_width / 2.0f) - 300.0f;
             float col_realword = col_dreamword + 150.0f;
             float col_sep = col_realword - 50.0f;

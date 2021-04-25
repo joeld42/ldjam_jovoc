@@ -10,6 +10,8 @@ class TileLevel( object ):
 		self.layers = []
 		self.collision = []
 		self.tiles = []
+		self.journalText = None
+		self.journalPos = ( 0,0, 0, 0)
 
 	@staticmethod
 	def from_dict( data ):
@@ -82,6 +84,29 @@ class TileLevel( object ):
 			#print (tileData)
 			level.tiles.append( tileData )
 
+		# Unpack the level entities
+		for ent in entityLayerData.get( 'entityInstances', []):
+			etype = ent.get( '__identifier', "unk" )
+			print ( "entity", etype )
+			if (etype == 'JournalText'):
+				px, py = ent['__grid']
+				w = int(ent['width'] / 25)
+				h = int(ent['height'] / 25)
+				storyText = "text missing"
+				for ff in ent['fieldInstances']:
+					fid = ff['__identifier']
+					if fid == 'StoryText':
+						storyText = ff['__value']
+
+				print( "text ", px, py, w, h, storyText )
+				if not level.journalText is None:
+					print( "WARN: level already has journal text")
+
+				level.journalText = storyText
+				level.journalPos = ( px, py,  w,  h )
+
+
+
 		return level
 
 class TileWorld( object ):
@@ -124,6 +149,17 @@ def dumpLevelData( world ):
 		for tile in level.tiles:
 			fp.write(f'     {{ .tx = {tile[0]}, .ty = {tile[1]}, .st0 = {{ { tile[2][0] }, { tile[2][1] } }}, .st1 = {{ { tile[3][0] }, { tile[3][1] } }} }}, \n')
 		fp.write(f'   }},\n')
+
+		if level.journalText:
+			fp.write( f'    .journal = {{\n')
+			fp.write( f'        .tx = { level.journalPos[0] }, .ty = { level.journalPos[1] }, .w = { level.journalPos[2] }, .h = { level.journalPos[3] },\n')
+			fp.write( f'        .text = ');
+			for line in level.journalText.split('\n'):
+				line = line.strip()
+				fp.write(f'\n        "{line}\\n"');
+			fp.write(f';\n');
+
+			fp.write(f'     }},\n')
 
 		fp.write(f"}};\n\n\n")
 

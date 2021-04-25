@@ -1,19 +1,19 @@
 /* Auto-generated, do not edit */
 
 
-RoomInfo room_Level_0 = {
-   .name = "Level_0",
+RoomInfo room_LivingRoom = {
+   .name = "LivingRoom",
     .worldX = 0,
     .worldY = 0,
    .collision = {
     1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1,
     1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
     1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-    1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-    1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-    0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-    1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
     1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
     1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
     1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1,
@@ -197,6 +197,12 @@ RoomInfo room_Level_0 = {
      { .tx = 14, .ty = -10, .st0 = { 0.34146341463414637, 0.24390243902439024 }, .st1 = { 0.36585365853658536, 0.2682926829268293 } }, 
      { .tx = 15, .ty = -10, .st0 = { 0.36585365853658536, 0.24390243902439024 }, .st1 = { 0.3902439024390244, 0.2682926829268293 } }, 
    },
+    .journal = {
+        .tx = 2, .ty = 7, .w = 3, .h = 2,
+        .text = 
+        "I am hoping the quiet and peaceful of this cottage in countryside of Dordogne would be a salve for my much-frustrated writing.\n"
+        "I mean to uncover the language of dreams. It feels important, almost urgent to do so. Therefore, this morning after waking I have resolved not to leave the house until I have learned five words of it.\n";
+     },
 };
 
 
@@ -998,7 +1004,7 @@ RoomInfo room_Level_4 = {
 
 WorldMap world = {
     .rooms = {
-             &room_Level_0,
+             &room_LivingRoom,
              &room_Level_1,
              &room_Level_2,
              &room_Level_3,
