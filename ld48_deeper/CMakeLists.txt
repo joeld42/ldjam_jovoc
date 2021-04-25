@@ -17,5 +17,5 @@ fips_begin_app(ld48_deeper windowed)
     	ld48_deeper.cpp
     	)
     fipsutil_copy(ld48deeper_gamedata.yml)
-    fips_deps(ldjam stb)
+    fips_deps(stb)
 fips_end_app()

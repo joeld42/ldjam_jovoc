@@ -39,6 +39,7 @@ typedef struct TKSpriteGroup_s
 	sg_image atlas;
 	uint32_t width;
 	uint32_t height;
+	bool is_ui_sprite;
 
 } TKSpriteGroup;
 
@@ -239,7 +240,6 @@ static void tksprite_fetch_callback(const sfetch_response_t* response) {
 			sg_image_info info = sg_query_image_info( sgroup->atlas );
             sgroup->width = info.width;
             sgroup->height = info.height;
-            
 
             // Update STs for sprites created with this image
             TKSpriteSystem *sys = &g_defaultSpriteSystem;
@@ -312,6 +312,22 @@ int tk_sprite_make_sdef( const char *path )
 	sdef->pxrect = {};
 
 	return sdef_ndx;
+}
+
+void tk_sprite_mark_ui( const char *path )
+{
+	TKSpriteSystem *sys = &g_defaultSpriteSystem;
+
+	// Find the named spritegroup
+	uint16_t sgIndex = TK_MAX_SPRITEGROUPS;
+	for (int i=0; i < sys->numSpriteGroups; i++)
+	{
+		TKSpriteGroup *sg = sys->spritegroups + i;
+		if (!strcmp( sg->name, path )) {
+			sg->is_ui_sprite = true;
+			break;
+		}
+	}
 }
 
 
@@ -501,6 +517,14 @@ void tk_push_sprite_tilemap( TKSpriteHandle sh, RoomInfo *map, glm::vec3 roomPos
 
 		//glm::vec4 color = glm::vec4( glm::rgbColor( glm::vec3( sin((float)(i * 1723.45)) * 360.0f, 0.3f, 0.9f) ), 1.0f) ;
 
+		int tx = tt->tx;
+		int ty = -tt->ty; // FIXME: ty is negative in data 
+		int ndx = ty * 16 + tx;
+		
+		// if (map->collision[ndx]) {
+		// 	color = glm::vec4( 1.0f, 0.0f, 0.0f, 1.0f );
+		// }
+
 		glm::vec3 pos = glm::vec3( (float)tt->tx, (float)tt->ty, 0.0f ) + roomPos;
 
 		glm::vec4 st00 = glm::vec4( tt->st0.x, tt->st0.y, 0.0f, 0.0f );
@@ -530,7 +554,7 @@ void tk_push_sprite_tilemap( TKSpriteHandle sh, RoomInfo *map, glm::vec3 roomPos
 	}
 }
 
-void tk_sprite_drawgroups( glm::mat4 mvp )
+void tk_sprite_drawgroups( glm::mat4 mvp, glm::mat4 ui_matrix )
 {
 	TKSpriteSystem *sys = &g_defaultSpriteSystem;
 	
@@ -549,7 +573,14 @@ void tk_sprite_drawgroups( glm::mat4 mvp )
 		TKSpriteGroup *sgroup = sys->spritegroups + batch->groupIndex;
 	    
 	    sys->bind.fs_images[ 0 ] = sgroup->atlas;
-		sg_apply_bindings( &(sys->bind) );    
+
+	    if (sgroup->is_ui_sprite) {
+	    	params.mvp = ui_matrix;
+	    } else {
+	    	params.mvp = mvp;	    
+	    }
+
+		sg_apply_bindings( &(sys->bind) ); 
 	    sg_apply_uniforms( SG_SHADERSTAGE_VS, 0, &params, sizeof(params));
 
 	    //sdtx_printf("batch %d, start %d num %d\n", i, batch->startIndex, batch->numIndices );

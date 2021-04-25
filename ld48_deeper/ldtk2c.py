@@ -57,10 +57,27 @@ class TileLevel( object ):
 
 			# Logical tileset is 4100x4100 so the last row/col get cut off
 			# a few pixels here so don't put important items in the last edge
-			st0 = (srcTile[0] , srcTile[1])
-			st1 = (srcTile[0] + TSZ, srcTile[1] + TSZ)
+			st0_raw = (srcTile[0] , srcTile[1])
+			st1_raw = (srcTile[0] + TSZ, srcTile[1] + TSZ)
 			flags = tile.get("f")
 			#print ("Tile ", px[0]/TSZ, px[1]/TSZ, " ST ", st0 , st1)
+			if (flags==0):
+				# No flip
+				st0 = st0_raw
+				st1 = st1_raw
+			elif (flags==1):
+				# Flip horizontal
+				st0 = ( st1_raw[0], st0_raw[1] )
+				st1 = ( st0_raw[0], st1_raw[1])
+			elif (flags==2):
+				# Flip vertical
+				st0 = (st0_raw[0], st1_raw[1])
+				st1 = (st1_raw[0], st0_raw[1])
+			elif (flags==3):
+				# flip both
+				st0 = st1_raw
+				st1 = st0_raw
+
 			tileData = ( int(px[0]/TSZ), -int(px[1]/TSZ), (st0[0] / 1025.0, st0[1] / 1025.0), (st1[0] / 1025.0, st1[1] / 1025.0) )
 			#print (tileData)
 			level.tiles.append( tileData )

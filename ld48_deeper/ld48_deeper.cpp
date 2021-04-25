@@ -52,6 +52,8 @@ typedef struct FontInfo_s {
     FONScontext* fons;
     //float dpi_scale;
     int font_normal;
+    int font_dream;
+    uint8_t font_dream_data[256 * 1024];
     uint8_t font_normal_data[256 * 1024];
 } FontInfo;
 static FontInfo font;
@@ -63,11 +65,32 @@ static FontInfo font;
 // NOTES: sgl_begin_line_loop
 static void draw();
 
+typedef struct Actor_s 
+{
+    TKSpriteHandle sprHead;
+    TKSpriteHandle sprBody;
+    TKSpriteHandle sprHand;
+
+    glm::vec3 pos;
+
+    float travel; // for anim
+} Actor;
+
+#define CAM_HITE_ZOOMED ( 7.0f )
+#define CAM_HITE_WIDE ( 30.0f )
+
 #define MAX_KEYCODE (400)
 typedef struct GameState_s
 {
-    TKSpriteHandle spritePlayer;
     TKSpriteHandle spriteTilemap;
+
+    Actor player;
+
+    // UI Sprites
+    TKSpriteHandle spriteUIJournal;
+    TKSpriteHandle spriteUIHalftone;
+    TKSpriteHandle spriteUIRoundRect;
+    TKSpriteHandle spriteUIWaves;
 
     uint64_t ticks;
 
@@ -76,7 +99,10 @@ typedef struct GameState_s
     float camHite;
     float camHiteTarget;
 
-    glm::vec3 playerPos;
+    // UI stuff
+    bool show_journal;
+    bool show_dialog;
+
     glm::vec3 inputDir;
     RoomInfo *currRoom;
 
@@ -90,7 +116,15 @@ GameState game;
 
 static void font_normal_loaded(const sfetch_response_t* response) {
     if (response->fetched) {
+        printf("Font loaded...\n");
         font.font_normal = fonsAddFontMem( font.fons, (const char *)"sans", (unsigned char *)response->buffer_ptr, response->fetched_size,  false);
+    }
+}
+
+static void font_dream_loaded(const sfetch_response_t* response) {
+    if (response->fetched) {
+        printf("Dream Font loaded...\n");
+        font.font_dream = fonsAddFontMem( font.fons, (const char *)"dream", (unsigned char *)response->buffer_ptr, response->fetched_size,  false);
     }
 }
 
@@ -120,7 +154,7 @@ static void init()
 
 	/* setup sokol-fetch with the minimal "resource limits" */
 	sfetch_desc_t sfetch_desc = {
-		.max_requests = 4,
+		.max_requests = 8,
         .num_channels = 1,
         .num_lanes = 1
 	};
@@ -137,12 +171,23 @@ static void init()
     font.font_normal = FONS_INVALID;
 
     sfetch_request_t fontRequest = {     
-        .path = "bobcaygr.ttf",
+        //.path = "epistolar.ttf",
+        
+        .path = "AveriaSerif-Light.ttf",
         .callback = font_normal_loaded,
         .buffer_ptr = font.font_normal_data,
         .buffer_size = sizeof(font.font_normal_data)
     };
     sfetch_send(&(fontRequest));
+
+    sfetch_request_t fontDreamRequest = {     
+        //.path = "epistolar.ttf",
+        .path = "ACGuanche-Lite.ttf",
+        .callback = font_dream_loaded,
+        .buffer_ptr = font.font_dream_data,
+        .buffer_size = sizeof(font.font_dream_data)
+    };
+    sfetch_send(&(fontDreamRequest));
 
     float pxSize = 1.0f / canv_height;
     TKSpriteSystemDesc spriteDesc = {
@@ -152,15 +197,156 @@ static void init()
     tk_sprite_init_system( spriteDesc );
 
     // Set up game resources
-    game.spritePlayer = tk_sprite_make_st( "player.png", glm::vec2( 0.0, 0.0 ), glm::vec2( 0.25, 0.5 ) );
+    //game.spritePlayer = tk_sprite_make_st( "player.png", glm::vec2( 0.0, 0.0 ), glm::vec2( 0.25, 0.5 ) );
+
+    game.player.sprHead = tk_sprite_make_st( "chars_new.png", glm::vec2( 64.0 / 1024.0, 21.0 / 1024.0 ), glm::vec2( 195.0 / 1024.0, 146.0 / 1024.0 ) );
+    game.player.sprBody = tk_sprite_make_st( "chars_new.png", glm::vec2( 64.0 / 1024.0, 155.0 / 1024.0 ), glm::vec2( 195.0 / 1024.0, 1.0 / 3.0 ) );
+    game.player.sprHand = tk_sprite_make_st( "chars_new.png", glm::vec2( 0.0 / 1024.0, 117.0 / 1024.0 ), glm::vec2( 57.0 / 1024.0, 179.0 / 1024.0 ) );
 
     game.spriteTilemap = tk_sprite_make( "dreams_tileset.png");
 
-    game.camHite = 30.0f;
-    game.camHiteTarget = 8.0f;
+    game.spriteUIJournal = tk_sprite_make_st( "ui_stuff.png", glm::vec2( 0.0f, 0.0f ), glm::vec2( 691.0 / 1024.0, 602.0 / 1024.0) );
+    game.spriteUIWaves = tk_sprite_make_st( "ui_stuff.png", glm::vec2( 0.0f, 857.0 / 1024.0 ), glm::vec2( 1.0f, 1.0f) );
+    game.spriteUIRoundRect = tk_sprite_make_st( "ui_stuff.png", glm::vec2( 0.0f, 748.0 / 1024.0 ), glm::vec2( 1.0, 844.0 / 1024.0) );
+    game.spriteUIHalftone = tk_sprite_make_st( "ui_stuff.png", glm::vec2( 0.0f, 645.0 / 1024.0 ), glm::vec2( 1.0, 717.0 / 1024.0) );
+    
+    tk_sprite_mark_ui( "ui_stuff.png" );
+
+    game.camHite = CAM_HITE_WIDE;
+    game.camHiteTarget = CAM_HITE_ZOOMED;
     game.currRoom = &room_Level_0;
 
+    game.player.pos = glm::vec3( 9.5f, -5.5f, 0.0f );
+
 	//emscripten_set_main_loop( draw, 0, 1 );
+}
+
+void draw_actor( Actor *actor, glm::vec3 pos )
+{
+    float head_bob = fabs( sin( actor->travel ) );
+    float hand_bob = sin( actor->travel * 2.0f );
+    tk_push_sprite_scaled( actor->sprBody, pos + glm::vec3( 0.0f, 0.5f , 0.0f), 4.0f );
+    
+    tk_push_sprite_scaled( actor->sprHead, pos + glm::vec3( 0.0f, 1.2f + 0.2f * head_bob, 0.0f), 3.0f );
+
+    tk_push_sprite_scaled( actor->sprHand, pos + glm::vec3( -0.6f, 0.35f + 0.1f * hand_bob, 0.0f), 3.0f );
+    tk_push_sprite_scaled( actor->sprHand, pos + glm::vec3(  0.5f, 0.35f - 0.1f * hand_bob, 0.0f), 3.0f );
+}
+
+RoomInfo *room_for_world_pos( glm::vec3 pos )
+{
+    for (int i=0; i < MAX_ROOMS; i++)
+    {
+        RoomInfo* room = world.rooms[i];
+        if (!room) break;
+
+        glm::vec3 roomPos =  glm::vec3( room->worldX, room->worldY, 0.0f );
+        
+        // see if the pos is in this room
+        if ( (pos.x > roomPos.x) && (pos.y > roomPos.y - 11.0) &&
+             (pos.x < roomPos.x + 16.0f) && (pos.y < roomPos.y) ) {
+            return room;
+        }
+    }
+
+    return NULL;
+}
+
+float emit_norm_text( FONScontext* fs, char *text, float cx, float cy )
+{
+    uint32_t black32 = sfons_rgba(0, 0, 0, 255);
+    fonsSetFont(fs, font.font_normal);
+    fonsSetSize(fs, 36.0f );
+    fonsSetColor(fs, black32 );
+    return fonsDrawText(fs, cx, cy, text, NULL);
+}
+
+float emit_dream_text( FONScontext* fs, char *text, float cx, float cy )
+{
+    uint32_t blue32  = sfons_rgba(0, 192, 255, 255); 
+    fonsSetFont(fs, font.font_dream);
+    fonsSetSize(fs, 36.0f );
+    fonsSetColor(fs, blue32 );
+    return fonsDrawText(fs, cx, cy, text, NULL);
+}
+
+void wrap_dream_text( float x0, float x1, float y, char *text )
+{
+    FONScontext* fs = font.fons;
+    float cx = x0;
+    float cy = y;    
+
+    // TODO randomize color
+    uint32_t blue32  = sfons_rgba(0, 192, 255, 255); 
+    
+
+    char buff[1024];
+    char *ch = text;
+    char *dst = buff;
+    while (*ch) {
+        
+        // See if we need to wrap if we hit a space
+        if (*ch==' ')
+        {
+
+            *dst = '\0';
+            float nextx = cx + fonsTextBounds( fs, cx, cy, buff, dst, NULL);
+            //sdtx_printf( "NX: %3.2f %s\n", nextx, buff );
+            if (nextx > x1) {
+
+                *dst = '\0';
+                cx = emit_norm_text( fs, buff, cx, cy );
+                dst = buff;
+
+                // This will wrap
+                cy += 36.0f;
+                cx = x0;
+                ch++;
+                continue;                
+            }
+        }
+
+        // append char
+        if (*ch == '[')
+        {
+            *dst = '\0';
+            cx = emit_norm_text( fs, buff, cx, cy );
+            dst = buff;
+        }
+        else if (*ch == ']')
+        {
+            *dst = '\0';
+            cx = emit_dream_text( fs, buff, cx, cy );
+            dst = buff;
+        }
+        else 
+        {
+            *dst++ = *ch;
+            // check for wrap
+        }
+        ch++;
+    }
+
+    if (strlen(buff)) {
+        emit_norm_text( fs, buff, cx, cy );
+    }
+
+    /*
+    fonsSetFont(fs, font.font_normal);
+    fonsSetSize(fs, 36.0f );
+    fonsSetColor(fs, black32 );
+    cx = fonsDrawText(fs, cx, cy, "The language of ", NULL);
+
+    fonsSetFont(fs, font.font_dream);
+    fonsSetSize(fs, 36.0f );
+    fonsSetColor(fs, blue32 );
+    cx = fonsDrawText(fs, cx, cy, "Dreams", NULL);
+
+    fonsSetFont(fs, font.font_normal);
+    fonsSetSize(fs, 36.0f );
+    fonsSetColor(fs, black32 );
+    cx = fonsDrawText(fs, cx, cy, " is hidden from us.", NULL);
+    */
 }
 
 void frame()
@@ -170,10 +356,8 @@ void frame()
 
     /* text rendering via fontstash.h */
     float sx, sy, dx, dy, lh = 0.0f;
-    uint32_t white32 = sfons_rgba(255, 255, 255, 255);
-    uint32_t black32 = sfons_rgba(0, 0, 0, 255);
-    uint32_t brown32 = sfons_rgba(192, 128, 0, 128);
-    uint32_t blue32  = sfons_rgba(0, 192, 255, 255);
+    uint32_t white32 = sfons_rgba(255, 255, 255, 255);    
+    uint32_t brown32 = sfons_rgba(192, 128, 0, 128);    
     fonsClearState(font.fons);
 
     FONScontext* fs = font.fons;
@@ -203,7 +387,35 @@ void frame()
         game.inputDir += glm::vec3( 1.0f, 0.0f, 0.0f );
     }
 
-    game.playerPos += game.inputDir * (dt * 6.0f );
+    glm::vec3 newPlayerPos = game.player.pos + game.inputDir * (dt * 6.0f );
+
+    
+    float dtrav = glm::distance( game.player.pos, newPlayerPos );
+    game.player.travel += dtrav; // increase trav even if we're walking nowhere, so we animate into walls
+
+    // check collision
+    int tx = 0, ty = 0;
+    RoomInfo *room = room_for_world_pos( newPlayerPos );
+    bool didCollide = true;
+    if (room) {        
+        // get tile collision        
+        if (newPlayerPos.y < 0.0f) {
+            tx = (int)newPlayerPos.x - room->worldX;
+            ty = -((int)newPlayerPos.y - room->worldY);
+        } else {
+            tx = (int)newPlayerPos.x - room->worldX;
+            ty = -((int)(newPlayerPos.y + 1) - room->worldY);
+        }
+        
+        didCollide = room->collision[ty*16+tx];
+
+    }
+
+    if (!didCollide)
+    {
+        game.player.pos = newPlayerPos;
+    }
+    
 
     if (game.currRoom)
     {
@@ -226,7 +438,7 @@ void frame()
     float aspect = canv_width / canv_height;
     float viewHite = game.camHite;
 	glm::mat4 proj = glm::ortho( -viewHite * aspect, viewHite * aspect, -viewHite, viewHite, -1.0f, 1.0f );
-    glm::mat4 cam = glm::translate( proj, -game.camFocus );
+    glm::mat4 cam = glm::translate( proj, -(game.camFocus + glm::vec3( 0.0f, -1.0f, 0.0f) ) );
 
 
 	vs_params.mvp = cam;
@@ -250,8 +462,9 @@ void frame()
     sgl_defaults();
     sgl_load_matrix( glm::value_ptr( cam ));
 
-    
+    sdtx_printf("TILE: %d   %d\n", tx, ty );
 
+/*
     float rx = 0.0f;
     float ry = 0.0f;
     if (game.currRoom) {
@@ -275,14 +488,13 @@ void frame()
     sgl_c3f( 1.0f, 0.0f, 1.0f );    
     sgl_begin_lines();
 
-    sgl_v3f( game.playerPos.x - 0.3f, game.playerPos.y - 0.3f, 0.0f );
-    sgl_v3f( game.playerPos.x + 0.3f, game.playerPos.y + 0.3f, 0.0f );
+    sgl_v3f( game.player.pos.x - 0.3f, game.player.pos.y - 0.3f, 0.0f );
+    sgl_v3f( game.player.pos.x + 0.3f, game.player.pos.y + 0.3f, 0.0f );
 
-    sgl_v3f( game.playerPos.x + 0.3f, game.playerPos.y - 0.3f, 0.0f );
-    sgl_v3f( game.playerPos.x - 0.3f, game.playerPos.y + 0.3f, 0.0f );
+    sgl_v3f( game.player.pos.x + 0.3f, game.player.pos.y - 0.3f, 0.0f );
+    sgl_v3f( game.player.pos.x - 0.3f, game.player.pos.y + 0.3f, 0.0f );
     sgl_end();
-
-
+*/
     // sg_apply_pipeline(pip);
     // sg_apply_bindings(&bind);
     // sg_apply_uniforms( SG_SHADERSTAGE_VS, 0, &vs_params, sizeof(vs_params));
@@ -297,49 +509,143 @@ void frame()
     {
         RoomInfo* room = world.rooms[i];
         if (!room) break;
-        
+
         glm::vec3 roomPos =  glm::vec3( room->worldX, room->worldY, 0.0f );
         tk_push_sprite_tilemap( game.spriteTilemap, room, roomPos );
 
         // see if the player is in this room and set it current
-        if ( (game.playerPos.x > roomPos.x) && (game.playerPos.y > roomPos.y - 11.0) &&
-             (game.playerPos.x < roomPos.x + 16.0f) && (game.playerPos.y < roomPos.y) ) {
+        if ( (game.player.pos.x > roomPos.x) && (game.player.pos.y > roomPos.y - 11.0) &&
+             (game.player.pos.x < roomPos.x + 16.0f) && (game.player.pos.y < roomPos.y) ) {
             game.currRoom = room;
         }
     }
     
-    
+    draw_actor( &(game.player), game.player.pos );
+
     //tk_push_sprite( game.spriteTilemap, glm::vec3( 0.0f, 0.0f, 0.0f ));
-    tk_push_sprite_scaled( game.spritePlayer, game.playerPos + glm::vec3( 0.0f, 0.5f, 0.0f), 30.0f );
-
-    tk_sprite_drawgroups( vs_params.mvp );
-
-    sgl_ortho(0.0f, canv_width, canv_height, 0.0f, -1.0f, +1.0f);
-
-    //draw text
-    float cx, cy;
-    cx = 2.0f;
-    cy = 150.0f;
-
-    sgl_c3f( 0.0f, 1.0f, 1.0f );
-    sgl_begin_line_strip();
+    //tk_push_sprite_scaled( game.spritePlayer, game.playerPos + glm::vec3( 0.0f, 0.5f, 0.0f), 30.0f );
     
-    sgl_v3f( 0, 0, 0.0f );
-    sgl_v3f(  10, 0, 0.0f );
-    sgl_v3f(  10,  10, 0.0f );
-    sgl_v3f( 0,  10, 0.0f );
+    // Draw UI sprites on top
+    if (game.show_journal)
+    {
+        tk_push_sprite_scaled( game.spriteUIJournal, glm::vec3( canv_width / 2.0f, canv_height / 2.0f, 0.0f ), 500.0f );
 
-    sgl_v3f( 0, 0, 0.0f );
-    sgl_end();
 
+    }
+
+    if (game.show_dialog)
+    {
+        //void tk_push_sprite_all( TKSpriteHandle sh, glm::vec3 pos, float scale, glm::vec4 color, float angle_deg );
+        
+        // oops wave is not tall enough, draw it twice to cover the gap
+        tk_push_sprite_all( game.spriteUIWaves, glm::vec3( canv_width / 2.0f, 100.0f, 0.0f), 600.0f, 
+            glm::vec4( 168.0/255.0f, 236.0/255.0f, 240.0/255.0f, 1.0f), 0.0f );
+
+        tk_push_sprite_all( game.spriteUIWaves, glm::vec3( canv_width / 2.0f, 170.0f, 0.0f), 600.0f, 
+            glm::vec4( 168.0/255.0f, 236.0/255.0f, 240.0/255.0f, 1.0f), 0.0f );
+
+        // Name of speaker
+        tk_push_sprite_all( game.spriteUIRoundRect, glm::vec3( 0.0f, 250.0f, 0.0f), 380.0f, 
+            glm::vec4( 100.0/255.0f, 30.0/255.0f, 250.0/255.0f, 1.0f), 0.0f );
+
+        
+
+    }
+
+    float textSz = 800.0f;// 800 "virtual" pixels
+    glm::mat4 ui_mat = glm::ortho( 0.0f, textSz * aspect, 0.0f, textSz, -1.0f, +1.0f);
+
+    tk_sprite_drawgroups( vs_params.mvp, ui_mat );
+    
+    
+    
+    sgl_load_identity();
+    sgl_ortho(0.0f, textSz * aspect, textSz, 0.0f, -1.0f, +1.0f);
 
     
-    if (font.font_normal != FONS_INVALID) {
-        fonsSetFont(fs, font.font_normal);
-        fonsSetSize(fs, 100.0f );
-        fonsSetColor(fs, white32 );
-        cx = fonsDrawText(fs, cx, cy, "Game Text", NULL);
-        sdtx_printf("Drawing game text\n");
+    uint32_t black32 = sfons_rgba(0, 0, 0, 255);
+    if ((font.font_normal != FONS_INVALID) && (font.font_dream != FONS_INVALID))
+    {
+    
+        if (game.show_journal) {
+            float col_dreamword = (canv_width / 2.0f) - 300.0f;
+            float col_realword = col_dreamword + 150.0f;
+            float col_sep = col_realword - 50.0f;
+            float rowstart = 120;
+
+            const char *words[] = {
+                "Aderyn",  "Bird",
+                "Pentref", "Village",
+                "Trychfil", "Insect",
+                "Llaesu",   "Relax",
+                "Afon",  "River",
+                "Nant", "Stream",
+                "Gweld", "Look",
+                "Porfa", "Grass"
+            };
+
+    
+            fonsSetFont(fs, font.font_dream);
+            fonsSetSize(fs, 24.0f );
+            fonsSetColor(fs, black32 );            
+            float cy = rowstart;
+            for (int i=0; i < 8; i++)
+            {
+                fonsDrawText(fs, col_dreamword, cy, words[i*2], NULL);
+                cy += 36.0f;
+            }
+
+            fonsSetFont(fs, font.font_normal );
+            fonsSetSize(fs, 24.0f );
+            fonsSetColor(fs, black32 );
+            cy = rowstart;
+
+            for (int i=0; i < 8; i++)
+            {
+                fonsDrawText(fs, col_sep, cy, "...", NULL);
+                fonsDrawText(fs, col_realword, cy, words[i*2+1], NULL);
+                cy += 36.0f;
+            }
+        }
+
+        if (game.show_dialog) {
+        
+            // Character Title
+            fonsSetFont(fs, font.font_normal);
+            fonsSetSize(fs, 72.0f );
+            fonsSetColor(fs, white32 );
+            fonsDrawText(fs, 40, 570, "Arthur", NULL);
+
+            wrap_dream_text( 60.0f, canv_width - 200.0f, 630.0f, 
+                "The language of [Dreams] is hidden from us. We are counting down to the [blast],"
+                " but instead of your [Numbers] I use a list of [Seabirds]: [Tern], [Awk], [Seagull], [albatross]. "
+                "How a [Ship] having passed the [Line] was driven by [storms] to the cold [Country] towards the South Pole; "
+                "and how from thence she made her course to the tropical Latitude of the Great Pacific Ocean; and of " 
+                "the strange things that befell; and in what manner the Ancyent Marinere came back to his own Country."
+                );
+
+            // fonsSetFont(fs, font.font_normal);
+            // fonsSetSize(fs, 72.0f );
+            // fonsSetColor(fs, white32 );
+            // fonsDrawText(fs, 40, 570, "Arthur", NULL);
+
+            // fonsSetFont(fs, font.font_normal);
+            // fonsSetSize(fs, 36.0f );
+            // fonsSetColor(fs, black32 );
+            // cx = fonsDrawText(fs, cx, cy, "The language of ", NULL);
+
+            // fonsSetFont(fs, font.font_dream);
+            // fonsSetSize(fs, 36.0f );
+            // fonsSetColor(fs, blue32 );
+            // cx = fonsDrawText(fs, cx, cy, "Dreams", NULL);
+
+            // fonsSetFont(fs, font.font_normal);
+            // fonsSetSize(fs, 36.0f );
+            // fonsSetColor(fs, black32 );
+            // cx = fonsDrawText(fs, cx, cy, " is hidden from us.", NULL);
+        }
+    } else {
+        sdtx_printf("Fons not loaded\n");
     }
 
     // draw sgl stuff
@@ -370,11 +676,17 @@ static void event(const sapp_event* e) {
         {
             if (e->key_code == SAPP_KEYCODE_TAB)
             {
-                if (game.camHiteTarget > 10.0f) {
-                    game.camHiteTarget = 8.0f;
+                if (game.camHiteTarget > (CAM_HITE_ZOOMED + CAM_HITE_WIDE) / 2.0f ) {
+                    game.camHiteTarget = CAM_HITE_ZOOMED;
                 } else {
-                    game.camHiteTarget = 30.0f;
+                    game.camHiteTarget = CAM_HITE_WIDE;
                 }
+            }
+            else if (e->key_code == SAPP_KEYCODE_J) {
+                game.show_journal = !game.show_journal;
+            }
+            else if (e->key_code == SAPP_KEYCODE_D) {                
+                game.show_dialog = !game.show_dialog;
             }
         }
     }
