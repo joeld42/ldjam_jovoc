@@ -131,7 +131,8 @@ void tk_sprite_init_system( TKSpriteSystemDesc info )
             "varying vec2 uv;\n"
             "void main() {\n"
             "  gl_FragColor = texture2D(tex, uv) * color;\n"
-            //"  gl_FragColor = vec4( uv.x, uv.y, 0.5, 1.0 );\n"
+            //"  vec3 cc = texture2D(tex, uv).rgb * color.rgb;\n"
+            //"  gl_FragColor = vec4( cc, 0.8 );\n"
             "}\n";
     shader_desc.attrs[0].name = "position";
 	shader_desc.attrs[1].name = "color0";

@@ -200,8 +200,8 @@ RoomInfo room_LivingRoom = {
     .journal = {
         .tx = 2, .ty = 7, .w = 3, .h = 2,
         .text = 
-        "I am hoping the quiet and peaceful of this cottage in countryside of Dordogne would be a salve for my much-frustrated writing.\n"
-        "I mean to uncover the language of dreams. It feels important, almost urgent to do so. Therefore, this morning after waking I have resolved not to leave the house until I have learned five words of it.\n";
+        "I am hoping the quiet and peaceful surroundings of this cottage in the countryside of Dordogne will be a salve for my much-frustrated writing.\n"
+        "I mean to uncover the language of dreams. It feels important, almost urgent to do so. Therefore, this morning after waking I have resolved not to leave the house until I have learned five words of it.\n",
      },
 };
 

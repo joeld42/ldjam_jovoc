@@ -79,6 +79,16 @@ typedef struct Actor_s
 #define CAM_HITE_ZOOMED ( 7.0f )
 #define CAM_HITE_WIDE ( 30.0f )
 
+enum {
+    ACTION_None,
+
+    ACTION_Journal,
+    ACTION_Sleep,
+    ACTION_Wake,
+    ACTION_Talk,
+    ACTION_Inspect,
+};
+
 #define MAX_KEYCODE (400)
 typedef struct GameState_s
 {
@@ -92,6 +102,13 @@ typedef struct GameState_s
     TKSpriteHandle spriteUIRoundRect;
     TKSpriteHandle spriteUIWaves;
 
+    TKSpriteHandle btnOkay;
+    TKSpriteHandle btnJournal;
+    TKSpriteHandle btnSleep;
+    TKSpriteHandle btnWake;
+    TKSpriteHandle btnTalk;
+    TKSpriteHandle btnInspect;
+
     uint64_t ticks;
 
     glm::vec3 camFocus;
@@ -100,7 +117,8 @@ typedef struct GameState_s
     float camHiteTarget;
 
     // UI stuff
-    bool show_journal;
+    int availAction;
+    bool show_journal;    
     bool show_wordlist;
     bool show_dialog;
 
@@ -211,11 +229,19 @@ static void init()
     game.spriteUIRoundRect = tk_sprite_make_st( "ui_stuff.png", glm::vec2( 0.0f, 748.0 / 1024.0 ), glm::vec2( 1.0, 844.0 / 1024.0) );
     game.spriteUIHalftone = tk_sprite_make_st( "ui_stuff.png", glm::vec2( 0.0f, 645.0 / 1024.0 ), glm::vec2( 1.0, 717.0 / 1024.0) );
     
+    float buttonSz = 72.0f;
+    game.btnOkay = tk_sprite_make_st( "ui_stuff.png", glm::vec2( 748.0 / 1024.0, 0.0f), glm::vec2( 1.0f, 72.0f / 1024.0 ) );
+    game.btnJournal = tk_sprite_make_st( "ui_stuff.png", glm::vec2( 748.0 / 1024.0, (buttonSz * 1.0f) / 1024.0f), glm::vec2( 1.0f, (buttonSz * 2.0f) / 1024.0f ) );
+    game.btnSleep;
+    game.btnWake;
+    game.btnTalk;
+    game.btnInspect;
+
     tk_sprite_mark_ui( "ui_stuff.png" );
 
     game.camHite = CAM_HITE_WIDE;
     game.camHiteTarget = CAM_HITE_ZOOMED;
-    game.currRoom = &room_Level_0;
+    game.currRoom = &room_LivingRoom;
 
     game.player.pos = glm::vec3( 9.5f, -5.5f, 0.0f );
 
@@ -253,25 +279,28 @@ RoomInfo *room_for_world_pos( glm::vec3 pos )
     return NULL;
 }
 
-float emit_norm_text( FONScontext* fs, char *text, float cx, float cy )
+float emit_norm_text( FONScontext* fs, char *text, float cx, float cy, float fontSize )
 {
+
+    //sdtx_printf("EMIT: %3.0f %3.0f %s\n", cx, cy, text);
+
     uint32_t black32 = sfons_rgba(0, 0, 0, 255);
     fonsSetFont(fs, font.font_normal);
-    fonsSetSize(fs, 36.0f );
+    fonsSetSize(fs, fontSize );
     fonsSetColor(fs, black32 );
     return fonsDrawText(fs, cx, cy, text, NULL);
 }
 
-float emit_dream_text( FONScontext* fs, char *text, float cx, float cy )
+float emit_dream_text( FONScontext* fs, char *text, float cx, float cy, float fontSize )
 {
     uint32_t blue32  = sfons_rgba(0, 192, 255, 255); 
     fonsSetFont(fs, font.font_dream);
-    fonsSetSize(fs, 36.0f );
+    fonsSetSize(fs, fontSize );
     fonsSetColor(fs, blue32 );
     return fonsDrawText(fs, cx, cy, text, NULL);
 }
 
-void wrap_dream_text( float x0, float x1, float y, char *text )
+void wrap_dream_text( float x0, float x1, float y, char *text, float fontSize )
 {
     FONScontext* fs = font.fons;
     float cx = x0;
@@ -279,6 +308,9 @@ void wrap_dream_text( float x0, float x1, float y, char *text )
 
     // TODO randomize color
     uint32_t blue32  = sfons_rgba(0, 192, 255, 255); 
+
+    fonsSetFont(fs, font.font_normal);
+    fonsSetSize(fs, fontSize );
     
 
     char buff[1024];
@@ -296,28 +328,40 @@ void wrap_dream_text( float x0, float x1, float y, char *text )
             if (nextx > x1) {
 
                 *dst = '\0';
-                cx = emit_norm_text( fs, buff, cx, cy );
+                cx = emit_norm_text( fs, buff, cx, cy, fontSize );
+                
                 dst = buff;
 
                 // This will wrap
-                cy += 36.0f;
+                cy += fontSize;
                 cx = x0;
                 ch++;
                 continue;                
             }
         }
 
+        // newline
+        if (*ch=='\n') {
+            *dst = '\0';
+            cx = emit_norm_text( fs, buff, cx, cy, fontSize );
+            dst = buff;
+            cy += fontSize * 1.5;
+            cx = x0;
+            ch++;
+            continue;                
+        }
+
         // append char
         if (*ch == '[')
         {
             *dst = '\0';
-            cx = emit_norm_text( fs, buff, cx, cy );
+            cx = emit_norm_text( fs, buff, cx, cy, fontSize );
             dst = buff;
         }
         else if (*ch == ']')
         {
             *dst = '\0';
-            cx = emit_dream_text( fs, buff, cx, cy );
+            cx = emit_dream_text( fs, buff, cx, cy, fontSize );
             dst = buff;
         }
         else 
@@ -329,7 +373,8 @@ void wrap_dream_text( float x0, float x1, float y, char *text )
     }
 
     if (strlen(buff)) {
-        emit_norm_text( fs, buff, cx, cy );
+        *dst = '\0';
+        emit_norm_text( fs, buff, cx, cy, fontSize );
     }
 
     /*
@@ -421,12 +466,18 @@ void frame()
             // Check if we're on a journal square
             if (room && room->journal.text)
             {
-                if (!room->journal.viewed)
-                {
-                    if ( (tx >= room.journal.tx) && (tx < room.journal.tx + room.journal.w) &&
-                         (ty >= room.journal.ty) && (ty < room.journal.ty + room.journal.h) ) {
-                        show_journal = true;
+                if ( (tx >= room->journal.tx) && (tx < room->journal.tx + room->journal.w) &&
+                    (ty >= room->journal.ty) && (ty < room->journal.ty + room->journal.h) ) {
+
+                    if (!room->journal.viewed)
+                    {
+                        game.show_journal = true;
+                    } else {
+                        // Let player view it again
+                        game.availAction = ACTION_Journal;
                     }
+                } else if (game.availAction == ACTION_Journal) {
+                    game.availAction = ACTION_None;
                 }
             }
         }
@@ -481,7 +532,7 @@ void frame()
     sgl_defaults();
     sgl_load_matrix( glm::value_ptr( cam ));
 
-    sdtx_printf("TILE: %d   %d\n", tx, ty );
+    //sdtx_printf("TILE: %d   %d\n", tx, ty );
 
 /*
     float rx = 0.0f;
@@ -549,10 +600,10 @@ void frame()
     {
         tk_push_sprite_scaled( game.spriteUIJournal, glm::vec3( canv_width / 2.0f, canv_height / 2.0f, 0.0f ), 500.0f );
 
-
+        //tk_push_sprite_scaled( game.btnOkay, glm::vec3( canv_width / 3.0f, canv_height / 4.0f, 0.0f ), 500.0 );
+        tk_push_sprite_scaled( game.btnOkay, glm::vec3( (canv_width / 2.0f) + 130.0f, 300.0f, 0.0f ), 300.0 );
     }
-
-    if (game.show_dialog)
+    else if (game.show_dialog)
     {
         //void tk_push_sprite_all( TKSpriteHandle sh, glm::vec3 pos, float scale, glm::vec4 color, float angle_deg );
         
@@ -567,8 +618,11 @@ void frame()
         tk_push_sprite_all( game.spriteUIRoundRect, glm::vec3( 0.0f, 250.0f, 0.0f), 380.0f, 
             glm::vec4( 100.0/255.0f, 30.0/255.0f, 250.0/255.0f, 1.0f), 0.0f );
 
-        
-
+    } else {
+        // No UI is up, show avail action if there is one
+        if (game.availAction != ACTION_None) {
+            tk_push_sprite_scaled( game.btnJournal, glm::vec3( (canv_width / 2.0f), 80.0f, 0.0f ), 400.0 );       
+        }
     }
 
     float textSz = 800.0f;// 800 "virtual" pixels
@@ -588,8 +642,8 @@ void frame()
     
         if (game.show_journal) {
             float col_journalstart = (canv_width / 2.0f) - 300.0f;
-            float col_journalend = (canv_width / 2.0f) + 100.0f;
-            wrap_dream_text( col_journalstart, col_journalend, 120.0f, currRoom->journal.text );
+            float col_journalend = (canv_width / 2.0f) - 100.0f;
+            wrap_dream_text( col_journalstart, col_journalend, 120.0f, game.currRoom->journal.text, 18.0f );
 
         } else if (game.show_wordlist) {
             float col_dreamword = (canv_width / 2.0f) - 300.0f;
@@ -645,8 +699,8 @@ void frame()
                 " but instead of your [Numbers] I use a list of [Seabirds]: [Tern], [Awk], [Seagull], [albatross]. "
                 "How a [Ship] having passed the [Line] was driven by [storms] to the cold [Country] towards the South Pole; "
                 "and how from thence she made her course to the tropical Latitude of the Great Pacific Ocean; and of " 
-                "the strange things that befell; and in what manner the Ancyent Marinere came back to his own Country."
-                );
+                "the strange things that befell; and in what manner the Ancyent Marinere came back to his own Country.",
+                36.0f );
 
             // fonsSetFont(fs, font.font_normal);
             // fonsSetSize(fs, 72.0f );
@@ -706,6 +760,23 @@ static void event(const sapp_event* e) {
                     game.camHiteTarget = CAM_HITE_WIDE;
                 }
             }
+            else if ((e->key_code == SAPP_KEYCODE_X) || (e->key_code == SAPP_KEYCODE_Z) || (e->key_code == SAPP_KEYCODE_SPACE)) {
+
+                if (game.show_journal) {
+                    game.currRoom->journal.viewed = true;
+                    game.show_journal = false;
+                } else {
+                    // Do avail actions
+                    if (game.availAction == ACTION_Journal) 
+                    {
+                        game.currRoom->journal.viewed = false;
+                        game.show_journal = true;
+                    }
+                }
+
+            }
+
+            // DEBUG KEYS
             else if (e->key_code == SAPP_KEYCODE_J) {
                 game.show_journal = !game.show_journal;
             }

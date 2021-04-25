@@ -157,9 +157,7 @@ def dumpLevelData( world ):
 			for line in level.journalText.split('\n'):
 				line = line.strip()
 				fp.write(f'\n        "{line}\\n"');
-			fp.write(f';\n');
-
-			fp.write(f'     }},\n')
+			fp.write(f',\n     }},\n')
 
 		fp.write(f"}};\n\n\n")
 
