@@ -1,41 +1,40 @@
 SKIPWORDS : NEED JUST THIS HERE GOING CANT LIKE SAYS THAT
 
+ARTHUR Oh well, if we’re stuck on this boat at least the bar is well stocked.
+ARTHUR Care for a pint? Maybe a glass of wine? Maybe a burger or some fish and chips?
+ARTHUR I thought I heard water running in the wine cellar. Do you ever worry about the rain and flooding?
+ARTHUR I thought I heard the calling of a seabird, but it was just the generator.
+ARTHUR Water flows under everything, here. 
 
-ARTHUR : 0 : Oh well, if we’re stuck on this boat at least the bar is well stocked.
-ARTHUR : 1 : Care for a pint? Maybe a glass of wine? Maybe a burger or some fish and chips?
-ARTHUR : 2 : I thought I heard water running in the wine cellar. Do you ever worry about the rain and flooding?
-ARTHUR : 3 : I thought I heard the calling of seabirds, but it was just the generator.
-ARTHUR : 4 : Water flows under everything, here. 
+JANET I can't believe he cut off communication! This is practically kidnapping, I don't care what the contract says.
+JANET It looks like it might rain soon. Good for the sunflower, the town, and the world, but I need to fix that generator.
+JANET Saw a seabird circling. I need to get back inside before the rain. I deserve a sip of wine.
+JANET Lightning is dangerous for the tall sunflower, but we need the electricity. Am I right?
+JANET A sunflower is not a generator. If you call to a fish it will never answer.
 
-JANET : 0 : I can't believe he cut off communication! This is practically kidnapping, I don't care what the contract says.
-JANET : 1 : It looks like it might rain soon. Good for the sunflower and the town, but I need to fix that generator.
-JANET : 2 : Need to get back inside before the rain. I deserve a sip of wine.
-JANET : 3 : Lightning is dangerous for the tall sunflower, but we need the electricity. Am I right?
-JANET : 4 : A sunflower is not a generator. If you call to a fish it will never answer.
+TULIO We outnumber him. It's not a mutiny if he's not actually a captian, just a crazy billionaire.
+TULIO I'm just passing through, here. You can keep this little town. Not much going on, it's not even on the map.
+TULIO Fish for dinner, everyday. I'd rather eat a sunflower, I'm so tired of this world.
+TULIO Janet says violence is not the answer, but sometimes the answer is violence, or maybe wine.
+TULIO I'm going to sink this town if I can't get off of here.
 
-TULIO : 0 : We outnumber him. It's not a mutiny if he's not actually a captian, just a crazy billionaire.
-TULIO : 1 : I'm just passing through, here. You can keep this little town. Not much going on, not even on the map.
-TULIO : 2 : Fish for dinner, everyday. I'd rather eat a sunflower, I'm so tired of this.
-TULIO : 3 : Janet says violence is not the answer, but sometimes the answer is violence or wine.
-TULIO : 4 : I'm going to sink this town if I can't get off of here.
+ESME Don't be so afraid of the captian. He just needs a few more days to calm down.
+ESME Everyone in town is worried about the rain, but I'm like a fish, I love the water.
+ESME I bought a sunflower in the shop today to brighten up the glass in my window.
+ESME A town is made of people, not buildings or rooms. We're all in this boat together, even the captain.
+ESME I'm more afraid of being alone in the world than I am of drowning or violence. There is no answer, we are lost at sea, all of us.
 
-ESME : 0 : Don't be so afraid of the captian. He just needs a few more days to calm down.
-ESME : 1 : Everyone here is worried about the rain, but I'm like a fish, I love the water.
-ESME : 2 : I bought a sunflower in the shop today to brighten up the glass in my window.
-ESME : 3 : A town is made of people, not buildings or rooms. We're all in this boat together, even the captian.
-ESME : 4 : I'm more afraid of being alone than I am of drowning or violence. There is no answer, we are lost at sea, all of us.
+JAMAL What use is a navigator if he won't turn on the engines? 
+JAMAL Just ask if you need a map. Oh! I seem to have misplaced it.
+JAMAL The captain says one can't be lost if one burns their map.
+JAMAL I'm worried that some in the town might resort to violence if we can't talk sense into the captain.
+JAMAL A glass of wine made a glyph like a sunflower on my map. Is that the answer?
 
-JAMAL : 0 : What use is a navigator if he won't turn on the engines? 
-JAMAL : 1 : Just ask if you need a map. Oh! I seem to have misplaced it.
-JAMAL : 2 : The captian says one can't be lost if one burns their map.
-JAMAL : 3 : I'm worried that some in the town might resort to violence if we can't talk sense into the captian.
-JAMAL : 4 : A glass of wine made a glyph like a sunflower on my map. Is that the answer?
-
-SANDY : 0 : There are worse places to be stranded than a fancy boat.
-SANDY : 1 : (Humming) I called up the captian, said please bring me my wine...
-SANDY : 2 : So pretty, like fish beneath a glass bottom boat.
-SANDY : 3 : Tulio says he feels trapped here, but where would he go? We are all trapped on this world.
-SANDY : 4 : Sometimes the answer is to enjoy the rain.
+SANDY There are worse places to be stranded than a fancy yacht surrounded by enchanting gulls.
+SANDY (Humming) I called up the captain, said please bring me my wine ...
+SANDY So pretty, like fish beneath a glass bottom boat.
+SANDY Tulio says he feels trapped here, but where would he go? We are all trapped on this world.
+SANDY Sometimes the answer is to enjoy the rain, like a seabird.
 
 
 __end__
@@ -47,6 +46,6 @@ Act III - Return to the world of dreams, learn the billionaires words.
 random stuff:
 find a well: Well, well, well. What have we here? (You have learned the word for WATER)
 
-CAPTIAN : 0 : I am a [dreamer], and a [dreamer] can only [find] his [path] by [moonlight], and his [punishment] is that he sees the [dawn] [before] the [rest] of the [world].
+CAPTAIN : 0 : I am a [dreamer], and a [dreamer] can only [find] his [path] by [moonlight], and his [punishment] is that he sees the [dawn] [before] the [rest] of the [world].
 
 KEYWORDS: DREAMER FIND PATH MOONLIGHT PUNISHMENT DAWN BEFORE WORLD

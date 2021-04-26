@@ -96,6 +96,9 @@ typedef struct GameState_s
 
     Actor player;
 
+    int numNPCs;
+    Actor npc[10];
+
     // UI Sprites
     TKSpriteHandle spriteUIJournal;
     TKSpriteHandle spriteUIHalftone;
@@ -110,6 +113,7 @@ typedef struct GameState_s
     TKSpriteHandle btnInspect;
 
     uint64_t ticks;
+    float gameTime;
 
     glm::vec3 camFocus;
     glm::vec3 camTarget;
@@ -122,8 +126,11 @@ typedef struct GameState_s
     bool show_wordlist;
     bool show_dialog;
 
+    int dreamLevel;
+
     glm::vec3 inputDir;
     RoomInfo *currRoom;
+    SleepZone *currSleep; // sleep zone you're standing on
 
     bool keydown[MAX_KEYCODE];
 
@@ -232,18 +239,46 @@ static void init()
     float buttonSz = 72.0f;
     game.btnOkay = tk_sprite_make_st( "ui_stuff.png", glm::vec2( 748.0 / 1024.0, 0.0f), glm::vec2( 1.0f, 72.0f / 1024.0 ) );
     game.btnJournal = tk_sprite_make_st( "ui_stuff.png", glm::vec2( 748.0 / 1024.0, (buttonSz * 1.0f) / 1024.0f), glm::vec2( 1.0f, (buttonSz * 2.0f) / 1024.0f ) );
-    game.btnSleep;
-    game.btnWake;
-    game.btnTalk;
-    game.btnInspect;
+    game.btnSleep = tk_sprite_make_st( "ui_stuff.png", glm::vec2( 748.0 / 1024.0, (buttonSz * 2.0f) / 1024.0f), glm::vec2( 1.0f, (buttonSz * 3.0f) / 1024.0f ) ); 
+    game.btnWake = tk_sprite_make_st( "ui_stuff.png", glm::vec2( 748.0 / 1024.0, (buttonSz * 3.0f) / 1024.0f), glm::vec2( 1.0f, (buttonSz * 4.0f) / 1024.0f ) );
+    game.btnTalk = tk_sprite_make_st( "ui_stuff.png", glm::vec2( 748.0 / 1024.0, (buttonSz * 4.0f) / 1024.0f), glm::vec2( 1.0f, (buttonSz * 5.0f) / 1024.0f ) );
+    game.btnInspect = tk_sprite_make_st( "ui_stuff.png", glm::vec2( 748.0 / 1024.0, (buttonSz * 5.0f) / 1024.0f), glm::vec2( 1.0f, (buttonSz * 6.0f) / 1024.0f ) );
 
     tk_sprite_mark_ui( "ui_stuff.png" );
 
     game.camHite = CAM_HITE_WIDE;
     game.camHiteTarget = CAM_HITE_ZOOMED;
-    game.currRoom = &room_LivingRoom;
+    game.currRoom = &room_LivingRoom;    
+    game.currSleep = NULL;
 
     game.player.pos = glm::vec3( 9.5f, -5.5f, 0.0f );
+
+    game.dreamLevel = 1;
+
+    // set up actors for world
+    for (int i=0; i < MAX_ROOMS; i++)
+    {
+        RoomInfo* room = world.rooms[i];
+        if (!room) break;
+
+        if (strlen(room->actor.name) > 0) {
+            Actor *npc = game.npc + game.numNPCs;
+            
+            // TODO: use different sprites
+            npc->sprHead = game.player.sprHead;
+            npc->sprBody = game.player.sprBody;
+            npc->sprHand = game.player.sprHand;
+
+            npc->pos = glm::vec3( 
+                room->worldX + room->actor.tx, 
+                room->worldY - room->actor.ty, 0.0f );
+
+            room->actor.npcIndex = game.numNPCs;
+
+            game.numNPCs++;
+        }
+    }
+
 
 	//emscripten_set_main_loop( draw, 0, 1 );
 }
@@ -395,6 +430,16 @@ void wrap_dream_text( float x0, float x1, float y, char *text, float fontSize )
     */
 }
 
+bool inside_tile_rect( int tx, int ty, TileRect rect )
+{
+    if ( (tx >= rect.tx) && (tx < rect.tx + rect.w) &&
+         (ty >= rect.ty) && (ty < rect.ty + rect.h) ) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 void frame()
 {
     /* pump the sokol-fetch message queues, and invoke response callbacks */
@@ -413,6 +458,8 @@ void frame()
     // ======================================================================
     uint64_t frame_ticks = stm_laptime( &game.ticks );
     float dt = stm_sec( frame_ticks );
+
+    game.gameTime += dt;
 
     game.angleFGSprite += 4.0f * dt;
     game.angleBGSprite -= 3.2f * dt;
@@ -466,9 +513,8 @@ void frame()
             // Check if we're on a journal square
             if (room && room->journal.text)
             {
-                if ( (tx >= room->journal.tx) && (tx < room->journal.tx + room->journal.w) &&
-                    (ty >= room->journal.ty) && (ty < room->journal.ty + room->journal.h) ) {
-
+                if (inside_tile_rect( tx, ty, room->journal.rect)) {
+            
                     if (!room->journal.viewed)
                     {
                         game.show_journal = true;
@@ -476,8 +522,32 @@ void frame()
                         // Let player view it again
                         game.availAction = ACTION_Journal;
                     }
+
                 } else if (game.availAction == ACTION_Journal) {
                     game.availAction = ACTION_None;
+                }
+            }
+
+            // Check sleeps
+            if ((room) && (game.availAction != ACTION_Journal))
+            {
+                game.availAction = ACTION_None;
+                game.currSleep = NULL;
+                for (int i=0; i < 5; i++)
+                {
+                    SleepZone *sleep = room->sleeps + i;
+                    if ((sleep->rect.w > 0) && (sleep->rect.h > 0))
+                    {
+                        if (inside_tile_rect( tx, ty, sleep->rect )) {
+                            game.currSleep = sleep;
+                            if (sleep->asleepHere) {
+                                game.availAction = ACTION_Wake;
+                            } else if (game.dreamLevel < 4) {
+                                game.availAction = ACTION_Sleep;
+                            }
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -592,6 +662,13 @@ void frame()
     
     draw_actor( &(game.player), game.player.pos );
 
+    for (int i=0; i < game.numNPCs; i++)
+    {
+        Actor *npc = game.npc + i;
+        draw_actor( npc, npc->pos );
+        npc->travel += dt * 0.2;
+    }
+
     //tk_push_sprite( game.spriteTilemap, glm::vec3( 0.0f, 0.0f, 0.0f ));
     //tk_push_sprite_scaled( game.spritePlayer, game.playerPos + glm::vec3( 0.0f, 0.5f, 0.0f), 30.0f );
     
@@ -618,16 +695,29 @@ void frame()
         tk_push_sprite_all( game.spriteUIRoundRect, glm::vec3( 0.0f, 250.0f, 0.0f), 380.0f, 
             glm::vec4( 100.0/255.0f, 30.0/255.0f, 250.0/255.0f, 1.0f), 0.0f );
 
-    } else {
+    } 
+    else 
+    {
         // No UI is up, show avail action if there is one
         if (game.availAction != ACTION_None) {
-            tk_push_sprite_scaled( game.btnJournal, glm::vec3( (canv_width / 2.0f), 80.0f, 0.0f ), 400.0 );       
+            TKSpriteHandle btnAction;
+
+            if (game.availAction == ACTION_Journal) {
+                btnAction = game.btnJournal;
+            } else if (game.availAction == ACTION_Sleep) {
+                btnAction = game.btnSleep;
+            } else if (game.availAction == ACTION_Wake) {
+                btnAction = game.btnWake;                
+            }            
+
+            tk_push_sprite_scaled( btnAction, glm::vec3( (canv_width / 2.0f), 80.0f, 0.0f ), 400.0 );       
         }
     }
 
     float textSz = 800.0f;// 800 "virtual" pixels
     glm::mat4 ui_mat = glm::ortho( 0.0f, textSz * aspect, 0.0f, textSz, -1.0f, +1.0f);
 
+    tk_sprite_set_dream_level( game.dreamLevel, game.gameTime );
     tk_sprite_drawgroups( vs_params.mvp, ui_mat );
     
     
@@ -635,6 +725,11 @@ void frame()
     sgl_load_identity();
     sgl_ortho(0.0f, textSz * aspect, textSz, 0.0f, -1.0f, +1.0f);
 
+    sdtx_color3b( 0x6c, 0x17, 0xff );
+    sdtx_printf("Dream Level: %d\n", game.dreamLevel - 1 );
+    sdtx_printf("Avail: %d\n", game.availAction );
+
+    sdtx_color3b( 0x20, 0xFF, 0xFF );
     
     uint32_t black32 = sfons_rgba(0, 0, 0, 255);
     if ((font.font_normal != FONS_INVALID) && (font.font_dream != FONS_INVALID))
@@ -726,6 +821,7 @@ void frame()
         sdtx_printf("Fons not loaded\n");
     }
 
+
     // draw sgl stuff
     sgl_draw();
 
@@ -771,6 +867,17 @@ static void event(const sapp_event* e) {
                     {
                         game.currRoom->journal.viewed = false;
                         game.show_journal = true;
+                    } else if (game.availAction == ACTION_Sleep) {
+                        
+                        game.dreamLevel += 1;
+                        if (game.currSleep) {
+                            game.currSleep->asleepHere = true;
+                        }
+                    } else if (game.availAction == ACTION_Wake) {
+                        game.dreamLevel -= 1;
+                        if (game.currSleep) {
+                            game.currSleep->asleepHere = false;
+                        }
                     }
                 }
 

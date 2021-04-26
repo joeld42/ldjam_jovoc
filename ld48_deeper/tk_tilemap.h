@@ -10,11 +10,28 @@ typedef struct TileInfo_s {
     glm::vec2 st1;
 } TileInfo;
 
-typedef struct JournalText_s {
+typedef struct TileRect_s {
 	int tx, ty, w, h;
+} TileRect;
+
+typedef struct JournalText_s {
+	TileRect rect;
 	char *text;
 	bool viewed;
 } JournalText;
+
+typedef struct SleepZone_s {
+	TileRect rect;
+	bool asleepHere;
+} SleepZone;
+
+typedef struct ActorInfo_s {
+	const char name[16];
+	int tx;
+	int ty;	
+	const char *phrase[5];
+	int npcIndex;
+} ActorInfo;
 
 #define MAX_TILES_PER_ROOM (500)
 typedef struct RoomInfo_s {
@@ -28,7 +45,8 @@ typedef struct RoomInfo_s {
     TileInfo tiles[ MAX_TILES_PER_ROOM ];
 
     JournalText journal;
-
+    SleepZone sleeps[5];
+    ActorInfo actor;
 } RoomInfo;
 
 

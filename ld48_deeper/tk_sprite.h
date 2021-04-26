@@ -34,6 +34,7 @@ TKSpriteHandle tk_sprite_make( const char *path );
 TKSpriteHandle tk_sprite_make_st( const char *path, glm::vec2 st0, glm::vec2 st1 );
 TKSpriteHandle tk_sprite_make_px( const char *path, TKSpritePixelRect pxrect );
 
+void tk_sprite_set_dream_level( int level, float timer );
 
 void tk_sprite_mark_ui( const char *path );
 

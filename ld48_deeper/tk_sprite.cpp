@@ -57,6 +57,12 @@ typedef struct {
     glm::mat4 mvp;
 } TKDefaultSpriteShaderParams;
 
+typedef struct {
+    glm::mat4 mvp;
+    glm::vec4 time;
+} TKDreamSpriteShaderParams;
+
+
 struct TKSpriteBatch
 {
 	uint32_t groupIndex;
@@ -78,6 +84,9 @@ struct TKSpriteSystem
 	sg_bindings bind;
 	sg_shader defaultSpriteShader;
 
+	sg_shader dreamShader[5];
+	sg_pipeline dreamShaderPipe[5];
+
 	// Buffers
 	uint32_t capacityVertexBuff;
 	uint32_t capacityIndexBuff;	
@@ -92,8 +101,88 @@ struct TKSpriteSystem
 	TKSpriteBatch spriteBatches[TKSPRITE_MAX_BATCHES];
 	TKSpriteBatch *currBatch;
 	int numBatches;	
+
+	int dreamLevel;
+	float timer;
 };
 struct TKSpriteSystem g_defaultSpriteSystem = {};
+
+sg_shader make_dream_shader( int level )
+{
+	sg_shader_desc shader_desc = {};
+    shader_desc.vs.source =
+			"uniform mat4 mvp;\n"
+            "attribute vec4 position;\n"
+            "attribute vec4 color0;\n"
+            "attribute vec2 texcoord0;\n"
+            "varying vec4 color;\n"
+            "varying vec2 uv;"
+            "varying vec2 p;"
+            "void main() {\n"
+            "  gl_Position = mvp * position;\n"
+            "  p = vec2(gl_Position.x / gl_Position.w, gl_Position.y / gl_Position.w);\n"
+            //"  gl_Position = position;\n"
+            "  color = color0;\n"
+            "  uv = texcoord0;\n"
+            "}\n";
+
+	if (level == 0)
+	{	
+		// level 0 --  grayscalify
+		shader_desc.fs.source =
+            "precision mediump float;\n"
+            "uniform sampler2D tex;\n"
+			"uniform vec4 time;\n"
+            "varying vec4 color;\n"
+            "varying vec2 uv;\n"
+            "varying vec2 p;"
+            "void main() {\n"
+            "  vec4 col = texture2D(tex, uv) * color;\n"
+            "  float v = dot( col.rgb, vec3(0.2126, 0.7152, 0.0722));\n"
+            "  gl_FragColor = vec4( v, v, v, col.a );"
+            "}\n";
+	} 
+	else if (level == 1)
+	{	
+		shader_desc.fs.source =
+            "precision mediump float;\n"
+            "uniform sampler2D tex;\n"
+			"uniform vec4 time;\n"
+            "varying vec4 color;\n"
+            "varying vec2 uv;\n"
+            "varying vec2 p;"
+            "void main() {\n"
+            "  gl_FragColor = texture2D(tex, uv) * color;\n"            
+            "}\n";
+	} else {
+		shader_desc.fs.source =
+            "precision mediump float;\n"
+            "uniform sampler2D tex;\n"
+            "uniform vec4 time;\n"
+            "varying vec4 color;\n"
+            "varying vec2 uv;\n"
+            "varying vec2 p;"
+            "void main() {\n"
+            "  vec2 uv2 = vec2( uv.x + sin( (p.y * 10.0) + time.y ) * 0.01, "
+             "                  uv.y + sin( (p.x * 10.0) + time.y ) * 0.01 );"
+            "  vec4 col = texture2D(tex, uv2) * color;\n"
+            "  gl_FragColor = vec4( col.b, col.r, col.g, col.a);\n"
+            "}\n";
+	}
+    shader_desc.attrs[0].name = "position";
+	shader_desc.attrs[1].name = "color0";
+	shader_desc.attrs[2].name = "texcoord0";
+
+	shader_desc.fs.images[0] = { .name = "tex", .type=SG_IMAGETYPE_2D };
+
+	shader_desc.vs.uniform_blocks[0] = {
+		.size = sizeof(TKDreamSpriteShaderParams)
+	};
+	shader_desc.vs.uniform_blocks[0].uniforms[0] = { .name="mvp", .type = SG_UNIFORMTYPE_MAT4 };
+	shader_desc.vs.uniform_blocks[0].uniforms[1] = { .name="time", .type = SG_UNIFORMTYPE_FLOAT4 };
+
+	return sg_make_shader(&shader_desc);
+}
 
 void tk_sprite_init_system( TKSpriteSystemDesc info )
 {
@@ -147,23 +236,28 @@ void tk_sprite_init_system( TKSpriteSystemDesc info )
 
 	sys->defaultSpriteShader = sg_make_shader(&shader_desc);
 
-	// Set up the pipeline for our sprites
-	sg_pipeline_desc sprite_pipe_desc = {
-        .layout = { },
-        .shader = sys->defaultSpriteShader,
-        .index_type = SG_INDEXTYPE_UINT16,
-        .blend = {
-        	.enabled = true,
-        	.src_factor_rgb = SG_BLENDFACTOR_SRC_ALPHA,
-    		.dst_factor_rgb = SG_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
-    		.src_factor_alpha = SG_BLENDFACTOR_ZERO,
-    		.dst_factor_alpha = SG_BLENDFACTOR_ONE,
-        }
-    };
-    sprite_pipe_desc.layout.attrs[0].format=SG_VERTEXFORMAT_FLOAT3;
-    sprite_pipe_desc.layout.attrs[1].format=SG_VERTEXFORMAT_FLOAT4;
-    sprite_pipe_desc.layout.attrs[2].format=SG_VERTEXFORMAT_FLOAT4;
-    sys->pipe = sg_make_pipeline(&sprite_pipe_desc);
+	for (int i=0; i < 5; i++)
+	{
+		sys->dreamShader[i] = make_dream_shader( i );
+	
+		// Set up the pipeline for our sprites
+		sg_pipeline_desc sprite_pipe_desc = {
+	        .layout = { },
+	        .shader = sys->dreamShader[i],
+	        .index_type = SG_INDEXTYPE_UINT16,
+	        .blend = {
+	        	.enabled = true,
+	        	.src_factor_rgb = SG_BLENDFACTOR_SRC_ALPHA,
+	    		.dst_factor_rgb = SG_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
+	    		.src_factor_alpha = SG_BLENDFACTOR_ZERO,
+	    		.dst_factor_alpha = SG_BLENDFACTOR_ONE,
+	        }
+	    };
+	    sprite_pipe_desc.layout.attrs[0].format=SG_VERTEXFORMAT_FLOAT3;
+	    sprite_pipe_desc.layout.attrs[1].format=SG_VERTEXFORMAT_FLOAT4;
+	    sprite_pipe_desc.layout.attrs[2].format=SG_VERTEXFORMAT_FLOAT4;
+	    sys->dreamShaderPipe[i] = sg_make_pipeline(&sprite_pipe_desc);
+	}
 
     // Initialize the buffers    
 	sys->capacityVertexBuff = TKSPRITE_INITIAL_VERTBUFFSIZE;
@@ -182,6 +276,13 @@ void tk_sprite_init_system( TKSpriteSystemDesc info )
 	};    	
 	index_buffer_desc.size = sys->capacityIndexBuff;
 	sys->bind.index_buffer = sg_make_buffer(&index_buffer_desc);
+}
+
+void tk_sprite_set_dream_level( int level, float timer )
+{
+	TKSpriteSystem *sys = &g_defaultSpriteSystem;
+	sys->dreamLevel = level;
+	sys->timer = timer;
 }
 
 // Update the sdef when with and height are known
@@ -562,12 +663,17 @@ void tk_sprite_drawgroups( glm::mat4 mvp, glm::mat4 ui_matrix )
 	TKDefaultSpriteShaderParams params = {};
 	params.mvp = mvp;
 
-	sdtx_printf("--- Have %d groups, %d batches\n", sys->numSpriteGroups, sys->numBatches );
+	TKDreamSpriteShaderParams dreamParams = {};
+	dreamParams.mvp = mvp;
+	dreamParams.time = glm::vec4( sys->timer * 0.1f, sys->timer, sys->timer * 10.0f, sys->timer * 30.0f );
+
+	sdtx_printf("--- Have %d groups, %d batches (L %d)\n", sys->numSpriteGroups, sys->numBatches, sys->dreamLevel );
 
 	sg_update_buffer( sys->bind.vertex_buffers[0], sys->drawverts, sys->numverts * sizeof(TKSpriteDrawVert));
 	sg_update_buffer( sys->bind.index_buffer, sys->indices, sys->numIndices * sizeof(uint16_t) );
 	
-	sg_apply_pipeline(sys->pipe);
+	//sg_apply_pipeline(sys->dreamShaderPipe[ sys->dreamLevel]);
+
 	for (int i=0; i < sys->numBatches; i++)
 	{		
 		TKSpriteBatch *batch = sys->spriteBatches + i;
@@ -575,14 +681,19 @@ void tk_sprite_drawgroups( glm::mat4 mvp, glm::mat4 ui_matrix )
 	    
 	    sys->bind.fs_images[ 0 ] = sgroup->atlas;
 
+	    // Force UI elements to use dream level 1 shader (normal)
 	    if (sgroup->is_ui_sprite) {
-	    	params.mvp = ui_matrix;
+	    	dreamParams.mvp = ui_matrix;
+	    	sg_apply_pipeline(sys->dreamShaderPipe[1]);
 	    } else {
-	    	params.mvp = mvp;	    
+	    	dreamParams.mvp = mvp;	    
+	    	sg_apply_pipeline(sys->dreamShaderPipe[sys->dreamLevel]);
 	    }
 
+
+
 		sg_apply_bindings( &(sys->bind) ); 
-	    sg_apply_uniforms( SG_SHADERSTAGE_VS, 0, &params, sizeof(params));
+	    sg_apply_uniforms( SG_SHADERSTAGE_VS, 0, &dreamParams, sizeof(dreamParams));
 
 	    //sdtx_printf("batch %d, start %d num %d\n", i, batch->startIndex, batch->numIndices );
 	    sg_draw( batch->startIndex, batch->numIndices, 1);
