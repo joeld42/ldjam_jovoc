@@ -1,4 +1,5 @@
 //#include <stdio.h>
+#include <ctype.h>
 
 #define GL_GLEXT_PROTOTYPES
 #include <GLES2/gl2.h>
@@ -78,6 +79,12 @@ typedef struct Actor_s
     ActorInfo *info;
 } Actor;
 
+typedef struct DreamWord_s
+{
+    char real[16];
+    bool learned;
+} DreamWord;
+
 #define CAM_HITE_ZOOMED ( 7.0f )
 #define CAM_HITE_WIDE ( 30.0f )
 
@@ -133,16 +140,45 @@ typedef struct GameState_s
     glm::vec3 inputDir;
     RoomInfo *currRoom;
     SleepZone *currSleep; // sleep zone you're standing on
-
+    DreamWordInfo *currWord;
     ActorInfo *talkableNPC;
 
     bool keydown[MAX_KEYCODE];
-
 
     float angleBGSprite, angleFGSprite;
 
 } GameState;
 GameState game;
+
+char g_cipher[27] = "BCDEFGHIJKLMNOPQRSTUVWXYZA";
+DreamWord g_words[] = {
+    { .real = "ANSWER" },
+    { .real = "BOAT" },
+    { .real = "CAPTAIN" },
+    { .real = "FISH" },
+    { .real = "GENERATOR" },
+    { .real = "GLASS" },
+    { .real = "MAP" },
+    { .real = "MAYBE" },
+    { .real = "RAIN" },
+    { .real = "SEABIRD" },
+    { .real = "SUNFLOWER" },
+    { .real = "TOWN" },
+    { .real = "VIOLENCE" },
+    { .real = "WATER" },
+    { .real = "WINE" },
+    { .real = "WORLD" },
+
+    { .real = "DREAMER" },
+    { .real = "FIND" },
+    { .real = "PATH" },
+    { .real = "MOONLIGHT" },
+    { .real = "PUNISHMENT" },
+    { .real = "DAWN" },
+    { .real = "BEFORE" },
+    { .real = "REST" },
+    { .real = "WORLD" },
+};
 
 static void font_normal_loaded(const sfetch_response_t* response) {
     if (response->fetched) {
@@ -334,11 +370,46 @@ float emit_norm_text( FONScontext* fs, char *text, float cx, float cy, float fon
 
 float emit_dream_text( FONScontext* fs, char *text, float cx, float cy, float fontSize )
 {
+    char dreamword[16];    
+    char *dst = dreamword;    
+    char *src = text;
+    int count = 0;
+    do {
+        *dst++ = toupper(*src++);
+        count++;
+    } while (*src);
+    *dst = '\0';
+
+    // see if this word is in our list and needs to be encrypted
+    bool shouldEncrypt = false;
+    for (int i=0; i < sizeof(g_words) / sizeof(g_words[0]); i++ ) {
+        if (!strcmp( g_words[i].real, dreamword )) {
+            shouldEncrypt = !g_words[i].learned;
+            break;
+        }
+    }
+
+    if (shouldEncrypt) {
+        for (char *ch = dreamword; *ch; ch++) {
+            *ch = g_cipher[ *ch - 'A' ];
+        }
+    }
+
     uint32_t blue32  = sfons_rgba(0, 192, 255, 255); 
     fonsSetFont(fs, font.font_dream);
     fonsSetSize(fs, fontSize );
     fonsSetColor(fs, blue32 );
-    return fonsDrawText(fs, cx, cy, text, NULL);
+
+    // measure the unencrypted word    
+    float result = fonsDrawText(fs, cx, cy, dreamword, NULL);    
+
+    //float dx = result - cx;
+    //sdtx_printf("AVG: %3.2f\n", dx / (float)count );
+
+    if (shouldEncrypt) {
+        result = cx + count * 18.0;
+    }
+    return result;
 }
 
 void wrap_dream_text( float x0, float x1, float y, char *text, float fontSize )
@@ -491,6 +562,16 @@ void frame()
     game.angleFGSprite += 4.0f * dt;
     game.angleBGSprite -= 3.2f * dt;
 
+    // update our cipher once a frame
+    int ndxA = rand() % 26;
+    int ndxB = rand() % 26;
+    char t = g_cipher[ndxA];
+    g_cipher[ndxA] = g_cipher[ndxB];
+    g_cipher[ndxB] = t;
+
+
+
+
 
     // Player movement
     if ((!game.show_dialog) && (!game.show_journal) && (!game.show_wordlist))
@@ -574,7 +655,7 @@ void frame()
                     SleepZone *sleep = room->sleeps + i;
                     if ((sleep->rect.w > 0) && (sleep->rect.h > 0))
                     {
-                        sdtx_printf("Checking sleep.... %d\n", i);
+                        //sdtx_printf("Checking sleep.... %d\n", i);
                         if (inside_tile_rect( tx, ty, sleep->rect )) {
                             game.currSleep = sleep;
                             if (sleep->asleepHere) {
@@ -582,6 +663,22 @@ void frame()
                             } else if (game.dreamLevel < 4) {
                                 game.availAction = ACTION_Sleep;
                             }
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if ((room) && (game.availAction != ACTION_Journal))
+            {
+                for (int i=0; i < 10; i++)
+                {
+                    DreamWordInfo *dw = room->dreamWords + i;
+                    if ((dw->rect.w > 0) && (dw->rect.h > 0))
+                    {
+                        if (inside_tile_rect( tx, ty, dw->rect )) {
+                            game.availAction = ACTION_Inspect;
+                            game.currWord = dw;
                             break;
                         }
                     }
@@ -860,6 +957,16 @@ void frame()
     sg_commit();
 }
 
+void learn_word( DreamWordInfo *dw )
+{
+    for (int i=0; i < sizeof(g_words) / sizeof(g_words[0]); i++ ) {
+        if (!strcmp( g_words[i].real, dw->word )) {
+            g_words[i].learned = true;
+            break;
+        }
+    }
+}
+
 static void event(const sapp_event* e) {
 
     assert((e->type >= 0) && (e->type < _SAPP_EVENTTYPE_NUM));
@@ -905,6 +1012,11 @@ static void event(const sapp_event* e) {
                         if (game.currSleep) {
                             game.currSleep->asleepHere = false;
                         }
+                    } else if (game.availAction == ACTION_Inspect) {
+
+                        // TODO: dialog box
+                        learn_word( game.currWord );
+
                     } else if (game.availAction == ACTION_Talk) {
                         game.show_dialog = true;
                     }

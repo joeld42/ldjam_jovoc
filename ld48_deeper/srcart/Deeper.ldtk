@@ -9,7 +9,7 @@
 		"url": "https://ldtk.io"
 	},
 	"jsonVersion": "0.9.3",
-	"nextUid": 23,
+	"nextUid": 26,
 	"worldLayout": "GridVania",
 	"worldGridWidth": 400,
 	"worldGridHeight": 275,
@@ -273,6 +273,72 @@
 					"textLanguageMode": null
 				}
 			]
+		},
+		{
+			"identifier": "Dreamword",
+			"uid": 23,
+			"tags": [],
+			"width": 25,
+			"height": 25,
+			"resizableX": true,
+			"resizableY": true,
+			"keepAspectRatio": false,
+			"fillOpacity": 1,
+			"lineOpacity": 1,
+			"hollow": false,
+			"color": "#EA8118",
+			"renderMode": "Rectangle",
+			"showName": true,
+			"tilesetId": null,
+			"tileId": null,
+			"tileRenderMode": "FitInside",
+			"maxCount": 0,
+			"limitScope": "PerLevel",
+			"limitBehavior": "MoveLastOne",
+			"pivotX": 0,
+			"pivotY": 0,
+			"fieldDefs": [
+				{
+					"identifier": "Dreamword",
+					"__type": "String",
+					"uid": 24,
+					"type": "F_String",
+					"isArray": false,
+					"canBeNull": true,
+					"arrayMinLength": null,
+					"arrayMaxLength": null,
+					"editorDisplayMode": "ValueOnly",
+					"editorDisplayPos": "Above",
+					"editorAlwaysShow": false,
+					"editorCutLongValues": true,
+					"min": null,
+					"max": null,
+					"regex": null,
+					"acceptFileTypes": null,
+					"defaultOverride": null,
+					"textLanguageMode": null
+				},
+				{
+					"identifier": "Message",
+					"__type": "String",
+					"uid": 25,
+					"type": "F_String",
+					"isArray": false,
+					"canBeNull": true,
+					"arrayMinLength": null,
+					"arrayMaxLength": null,
+					"editorDisplayMode": "Hidden",
+					"editorDisplayPos": "Above",
+					"editorAlwaysShow": false,
+					"editorCutLongValues": true,
+					"min": null,
+					"max": null,
+					"regex": null,
+					"acceptFileTypes": null,
+					"defaultOverride": null,
+					"textLanguageMode": null
+				}
+			]
 		}
 	], "tilesets": [
 		{
@@ -378,39 +444,6 @@
 					"gridTiles": [],
 					"entityInstances": [
 						{
-							"__identifier": "Door",
-							"__grid": [7,1],
-							"__pivot": [0,0],
-							"__tile": null,
-							"width": 50,
-							"height": 25,
-							"defUid": 5,
-							"px": [175,25],
-							"fieldInstances": []
-						},
-						{
-							"__identifier": "Door",
-							"__grid": [7,9],
-							"__pivot": [0,0],
-							"__tile": null,
-							"width": 50,
-							"height": 25,
-							"defUid": 5,
-							"px": [175,225],
-							"fieldInstances": []
-						},
-						{
-							"__identifier": "Door",
-							"__grid": [14,5],
-							"__pivot": [0,0],
-							"__tile": null,
-							"width": 25,
-							"height": 25,
-							"defUid": 5,
-							"px": [350,125],
-							"fieldInstances": []
-						},
-						{
 							"__identifier": "Sleep",
 							"__grid": [12,4],
 							"__pivot": [0,0],
@@ -482,6 +515,61 @@
 									"realEditorValues": [{
 										"id": "V_String",
 										"params": ["Player"]
+									}]
+								}
+							]
+						},
+						{
+							"__identifier": "Dreamword",
+							"__grid": [5,2],
+							"__pivot": [0,0],
+							"__tile": null,
+							"width": 50,
+							"height": 25,
+							"defUid": 23,
+							"px": [125,50],
+							"fieldInstances": [
+								{
+									"__identifier": "Dreamword",
+									"__value": "Answer",
+									"__type": "String",
+									"defUid": 24,
+									"realEditorValues": [{
+										"id": "V_String",
+										"params": ["Answer"]
+									}]
+								},
+								{ "__identifier": "Message", "__value": null, "__type": "String", "defUid": 25, "realEditorValues": [] }
+							]
+						},
+						{
+							"__identifier": "Dreamword",
+							"__grid": [10,2],
+							"__pivot": [0,0],
+							"__tile": null,
+							"width": 25,
+							"height": 50,
+							"defUid": 23,
+							"px": [250,50],
+							"fieldInstances": [
+								{
+									"__identifier": "Dreamword",
+									"__value": "Sunflower",
+									"__type": "String",
+									"defUid": 24,
+									"realEditorValues": [{
+										"id": "V_String",
+										"params": ["Sunflower"]
+									}]
+								},
+								{
+									"__identifier": "Message",
+									"__value": "The flower is beautiful, and looks freshly picked.",
+									"__type": "String",
+									"defUid": 25,
+									"realEditorValues": [{
+										"id": "V_String",
+										"params": ["The flower is beautiful, and looks freshly picked."]
 									}]
 								}
 							]
@@ -1276,6 +1364,70 @@
 									"realEditorValues": [{
 										"id": "V_String",
 										"params": ["Arthur"]
+									}]
+								}
+							]
+						},
+						{
+							"__identifier": "Dreamword",
+							"__grid": [2,7],
+							"__pivot": [0,0],
+							"__tile": null,
+							"width": 50,
+							"height": 50,
+							"defUid": 23,
+							"px": [50,175],
+							"fieldInstances": [
+								{
+									"__identifier": "Dreamword",
+									"__value": "Glass",
+									"__type": "String",
+									"defUid": 24,
+									"realEditorValues": [{
+										"id": "V_String",
+										"params": ["Glass"]
+									}]
+								},
+								{
+									"__identifier": "Message",
+									"__value": "There is a half-empty glass of water. It is ice cold.",
+									"__type": "String",
+									"defUid": 25,
+									"realEditorValues": [{
+										"id": "V_String",
+										"params": ["There is a half-empty glass of water. It is ice cold."]
+									}]
+								}
+							]
+						},
+						{
+							"__identifier": "Dreamword",
+							"__grid": [11,2],
+							"__pivot": [0,0],
+							"__tile": null,
+							"width": 50,
+							"height": 25,
+							"defUid": 23,
+							"px": [275,50],
+							"fieldInstances": [
+								{
+									"__identifier": "Dreamword",
+									"__value": "Seabird",
+									"__type": "String",
+									"defUid": 24,
+									"realEditorValues": [{
+										"id": "V_String",
+										"params": ["Seabird"]
+									}]
+								},
+								{
+									"__identifier": "Message",
+									"__value": "Out of the window, you see a circling albatross.",
+									"__type": "String",
+									"defUid": 25,
+									"realEditorValues": [{
+										"id": "V_String",
+										"params": ["Out of the window, you see a circling albatross."]
 									}]
 								}
 							]

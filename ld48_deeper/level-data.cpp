@@ -207,6 +207,10 @@ RoomInfo room_LivingRoom = {
           { .rect = { .tx = 12, .ty = 4, .w = 2, .h = 3  } },
           { .rect = { .tx = 4, .ty = 4, .w = 4, .h = 2  } },
      },
+    .dreamWords = {
+          { .rect = { .tx = 5, .ty = 2, .w = 2, .h = 1  }, .word = "ANSWER" },
+          { .rect = { .tx = 10, .ty = 2, .w = 1, .h = 2  }, .word = "SUNFLOWER", .message = "The flower is beautiful, and looks freshly picked."  },
+     },
 };
 
 
@@ -619,6 +623,10 @@ RoomInfo room_Level_2 = {
      { .tx = 14, .ty = -10, .st0 = { 0.34146341463414637, 0.5121951219512195 }, .st1 = { 0.36585365853658536, 0.5365853658536586 } }, 
      { .tx = 15, .ty = -10, .st0 = { 0.36585365853658536, 0.5121951219512195 }, .st1 = { 0.3902439024390244, 0.5365853658536586 } }, 
    },
+    .dreamWords = {
+          { .rect = { .tx = 2, .ty = 7, .w = 2, .h = 2  }, .word = "GLASS", .message = "There is a half-empty glass of water. It is ice cold."  },
+          { .rect = { .tx = 11, .ty = 2, .w = 2, .h = 1  }, .word = "SEABIRD", .message = "Out of the window, you see a circling albatross."  },
+     },
     .actor = {
         .name = "Arthur",
         .tx = 5, .ty = 5,

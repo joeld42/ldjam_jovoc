@@ -62,6 +62,7 @@ class TileLevel( object ):
 		self.sleeps = []
 		self.actor = None
 		self.actorPos = (0,0)
+		self.dreamWords = []
 
 	@staticmethod
 	def from_dict( data ):
@@ -167,6 +168,22 @@ class TileLevel( object ):
 
 				level.sleeps.append( (px, py, w, h, asleepHere) )
 
+			elif (etype == 'Dreamword'):
+				px, py = ent['__grid']
+				w = int(ent['width'] / 25)
+				h = int(ent['height'] / 25)
+				message = None
+				word = None
+				for ff in ent['fieldInstances']:
+					fid = ff['__identifier']
+					if fid == 'Dreamword':
+						word = ff['__value']
+					elif fid == 'Message':
+						message = ff['__value']
+
+				if word and len(word):
+					level.dreamWords.append( (px, py, w, h, word, message ) )
+
 			elif (etype == 'Actor'):
 				px, py = ent['__grid']
 				name = "UNKNOWN"
@@ -241,6 +258,14 @@ def dumpLevelData( world ):
 				fp.write( f'          {{ .rect = {{ .tx = {s[0]}, .ty = {s[1]}, .w = {s[2]}, .h = {s[3]}  }}{sleepText} }},\n')
 			fp.write(f'     }},\n')
 
+		if len( level.dreamWords ):
+			fp.write(f'    .dreamWords = {{\n')
+			for s in level.dreamWords:
+				msgText = ""
+				if (s[5]):
+					msgText = f', .message = "{s[5]}" '
+				fp.write( f'          {{ .rect = {{ .tx = {s[0]}, .ty = {s[1]}, .w = {s[2]}, .h = {s[3]}  }}, .word = "{s[4].upper() }"{msgText} }},\n')
+			fp.write(f'     }},\n')
 
 		if level.actor:
 			phrases = PHRASES.get(level.actor.upper(), [])

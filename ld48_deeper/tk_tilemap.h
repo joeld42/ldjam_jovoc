@@ -33,6 +33,12 @@ typedef struct ActorInfo_s {
 	int npcIndex;
 } ActorInfo;
 
+typedef struct DreamWordInfo_s {
+	TileRect rect;
+	const char word[16];
+	const char *message;	
+} DreamWordInfo;
+
 #define MAX_TILES_PER_ROOM (500)
 typedef struct RoomInfo_s {
     const char name[32];
@@ -46,7 +52,9 @@ typedef struct RoomInfo_s {
 
     JournalText journal;
     SleepZone sleeps[5];
+    DreamWordInfo dreamWords[10];
     ActorInfo actor;
+  
 } RoomInfo;
 
 
