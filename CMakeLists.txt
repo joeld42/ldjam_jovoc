@@ -3,7 +3,8 @@
 #
 cmake_minimum_required(VERSION 3.0)
 
-set( FIPS_EMSCRIPTEN_RELATIVE_SHELL_HTML basecode/shellpage.html )
+#set( FIPS_EMSCRIPTEN_RELATIVE_SHELL_HTML basecode/shellpage.html )
+set( FIPS_EMSCRIPTEN_RELATIVE_SHELL_HTML ld48_deeper/ld48_shellpage.html )
 
 project(ldjam_jovoc)
 

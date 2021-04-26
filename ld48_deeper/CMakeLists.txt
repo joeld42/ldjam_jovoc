@@ -1,4 +1,6 @@
 
+# Override shell
+#set( FIPS_EMSCRIPTEN_RELATIVE_SHELL_HTML ld48_shellpage.html )
 
 fips_begin_app(ld48_deeper windowed)
     fips_files(

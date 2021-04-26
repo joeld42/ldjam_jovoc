@@ -403,11 +403,11 @@ float emit_dream_text( FONScontext* fs, char *text, float cx, float cy, float fo
     // measure the unencrypted word    
     float result = fonsDrawText(fs, cx, cy, dreamword, NULL);    
 
-    //float dx = result - cx;
-    //sdtx_printf("AVG: %3.2f\n", dx / (float)count );
+    // float dx = result - cx;
+    // sdtx_printf("AVG: %3.2f\n", dx / (float)count );
 
     if (shouldEncrypt) {
-        result = cx + count * 18.0;
+        result = cx + count * 12.0;
     }
     return result;
 }
@@ -521,6 +521,12 @@ void show_dialog_box( FONScontext *fs)
 {
     const char *title = "Message";
     const char *message = "Message [Text] goes here.";
+    // "The language of [Dreams] is hidden from us. We are counting down to the [blast],"
+    //     " but instead of your [Numbers] I use a list of [Seabirds]: [Tern], [Awk], [Seagull], [albatross]. "
+    //     "How a [Ship] having passed the [Line] was driven by [storms] to the cold [Country] towards the South Pole; "
+    //     "and how from thence she made her course to the tropical Latitude of the Great Pacific Ocean; and of " 
+    //     "the strange things that befell; and in what manner the Ancyent Marinere came back to his own Country.";
+
     char buff[1024];
 
     if (game.talkableNPC)
@@ -545,19 +551,14 @@ void show_dialog_box( FONScontext *fs)
 
     // Character Title
     fonsSetFont(fs, font.font_normal);
-    fonsSetSize(fs, 72.0f );
+    fonsSetSize(fs, 50.0f );
     fonsSetColor(fs, 0xFFFFFFFF );
-    fonsDrawText(fs, 40, 570, title, NULL);
+    fonsDrawText(fs, 20, 462, title, NULL);
 
-    wrap_dream_text( 60.0f, 900.0f, 630.0f, 
+    wrap_dream_text( 30.0f, 700.0f, 495.0f, 
         (char *)message,
-        36.0f );
+        24.0f );
 
-// "The language of [Dreams] is hidden from us. We are counting down to the [blast],"
-//         " but instead of your [Numbers] I use a list of [Seabirds]: [Tern], [Awk], [Seagull], [albatross]. "
-//         "How a [Ship] having passed the [Line] was driven by [storms] to the cold [Country] towards the South Pole; "
-//         "and how from thence she made her course to the tropical Latitude of the Great Pacific Ocean; and of " 
-//         "the strange things that befell; and in what manner the Ancyent Marinere came back to his own Country.",
 }
 
 void frame()
@@ -743,8 +744,11 @@ void frame()
     // ======================================================================
 	params_t vs_params = {};
 	
-    float canv_width = (float)sapp_width();
-    float canv_height = (float)sapp_height();
+    // Don't use real width, assume an 800x600 virtual canvas
+    float canv_width_real = (float)sapp_width();
+    float canv_height_real = (float)sapp_height();
+    float canv_width = 800;
+    float canv_height = 600;
 
 	//float aspect = (float)emsc_width() / (float)emsc_height();
     float aspect = canv_width / canv_height;
@@ -769,7 +773,7 @@ void frame()
     // sdtx_printf("Smol text\n" );
 
 
-	sg_begin_default_pass(&pass_action, canv_width, canv_height );
+	sg_begin_default_pass(&pass_action, canv_width_real, canv_height_real );
         
     sgl_defaults();
     sgl_load_matrix( glm::value_ptr( cam ));
@@ -847,24 +851,24 @@ void frame()
     // Draw UI sprites on top
     if ((game.show_journal) || (game.show_wordlist))
     {
-        tk_push_sprite_scaled( game.spriteUIJournal, glm::vec3( canv_width / 2.0f, canv_height / 2.0f, 0.0f ), 500.0f );
+        tk_push_sprite_scaled( game.spriteUIJournal, glm::vec3( 400.0f, 300.0f, 0.0f ), 350.0f );
 
         //tk_push_sprite_scaled( game.btnOkay, glm::vec3( canv_width / 3.0f, canv_height / 4.0f, 0.0f ), 500.0 );
-        tk_push_sprite_scaled( game.btnOkay, glm::vec3( (canv_width / 2.0f) + 130.0f, 300.0f, 0.0f ), 300.0 );
+        tk_push_sprite_scaled( game.btnOkay, glm::vec3( (canv_width / 2.0f) + 130.0f, 120.0f, 0.0f ), 200.0 );
     }
     else if (game.show_dialog)
     {
         //void tk_push_sprite_all( TKSpriteHandle sh, glm::vec3 pos, float scale, glm::vec4 color, float angle_deg );
         
         // oops wave is not tall enough, draw it twice to cover the gap
-        tk_push_sprite_all( game.spriteUIWaves, glm::vec3( canv_width / 2.0f, 100.0f, 0.0f), 600.0f, 
+        tk_push_sprite_all( game.spriteUIWaves, glm::vec3( canv_width / 2.0f, 50.0f, 0.0f), 295.0f, 
             glm::vec4( 168.0/255.0f, 236.0/255.0f, 240.0/255.0f, 1.0f), 0.0f );
 
-        tk_push_sprite_all( game.spriteUIWaves, glm::vec3( canv_width / 2.0f, 170.0f, 0.0f), 600.0f, 
+        tk_push_sprite_all( game.spriteUIWaves, glm::vec3( canv_width / 2.0f, 100.0f, 0.0f), 295.0f, 
             glm::vec4( 168.0/255.0f, 236.0/255.0f, 240.0/255.0f, 1.0f), 0.0f );
 
         // Name of speaker
-        tk_push_sprite_all( game.spriteUIRoundRect, glm::vec3( 0.0f, 250.0f, 0.0f), 380.0f, 
+        tk_push_sprite_all( game.spriteUIRoundRect, glm::vec3( 80.0f, 150.0f, 0.0f), 230.0f, 
             glm::vec4( 100.0/255.0f, 30.0/255.0f, 250.0/255.0f, 1.0f), 0.0f );
 
     } 
@@ -891,7 +895,7 @@ void frame()
     }
 
     float textSz = 800.0f;// 800 "virtual" pixels
-    glm::mat4 ui_mat = glm::ortho( 0.0f, textSz * aspect, 0.0f, textSz, -1.0f, +1.0f);
+    glm::mat4 ui_mat = glm::ortho( 0.0f, 800.0f, 0.0f, 600.0f, -1.0f, +1.0f);
 
     tk_sprite_set_dream_level( game.dreamLevel, game.gameTime );
     tk_sprite_drawgroups( vs_params.mvp, ui_mat );
@@ -899,7 +903,8 @@ void frame()
     
     
     sgl_load_identity();
-    sgl_ortho(0.0f, textSz * aspect, textSz, 0.0f, -1.0f, +1.0f);
+    //sgl_ortho(0.0f, textSz * aspect, textSz, 0.0f, -1.0f, +1.0f);
+    sgl_ortho( 0.0f, 800.0f, 600.0f, 0.0f, -1.0f, +1.0f );
 
     sdtx_color3b( 0x6c, 0x17, 0xff );
     sdtx_printf("\n\n\n\nDream Level: %d\n", game.dreamLevel - 1 );
@@ -912,9 +917,9 @@ void frame()
     {
     
         if (game.show_journal) {
-            float col_journalstart = (canv_width / 2.0f) - 300.0f;
-            float col_journalend = (canv_width / 2.0f) - 100.0f;
-            wrap_dream_text( col_journalstart, col_journalend, 120.0f, game.currRoom->journal.text, 18.0f );
+            float col_journalstart = 120.0f;
+            float col_journalend = 360.0f;
+            wrap_dream_text( col_journalstart, col_journalend, 85.0f, game.currRoom->journal.text, 20.0f );
 
         } else if (game.show_wordlist) {
             float col_dreamword = (canv_width / 2.0f) - 300.0f;
