@@ -519,16 +519,38 @@ bool inside_tile_rect( int tx, int ty, TileRect rect )
 
 void show_dialog_box( FONScontext *fs)
 {
-    ActorInfo *nfo = game.talkableNPC;
+    const char *title = "Message";
+    const char *message = "Message [Text] goes here.";
+    char buff[1024];
+
+    if (game.talkableNPC)
+    {    
+        ActorInfo *nfo = game.talkableNPC;
+        title = nfo->name;
+        message = nfo->phrase[ game.dreamLevel ];
+    } 
+    else if (game.currWord)
+    {        
+        title = game.currWord->word;
+        if (game.currWord->message) {
+            sprintf( buff, "%s You learned the word [%s] in the language of dreams.", 
+                game.currWord->message,
+                game.currWord->word );
+        } else {
+            sprintf( buff, "You learned the word [%s] in the language of dreams.", game.currWord->word );
+        }
+        message = buff;
+    }
+
 
     // Character Title
     fonsSetFont(fs, font.font_normal);
     fonsSetSize(fs, 72.0f );
     fonsSetColor(fs, 0xFFFFFFFF );
-    fonsDrawText(fs, 40, 570, nfo->name, NULL);
+    fonsDrawText(fs, 40, 570, title, NULL);
 
     wrap_dream_text( 60.0f, 900.0f, 630.0f, 
-        (char *)nfo->phrase[ game.dreamLevel ],
+        (char *)message,
         36.0f );
 
 // "The language of [Dreams] is hidden from us. We are counting down to the [blast],"
@@ -688,6 +710,7 @@ void frame()
             if ((room) && (game.availAction != ACTION_Journal))
             {
                 // See if we are near enough to talk to somebody
+                game.talkableNPC = NULL;
                 for (int i=0; i < game.numNPCs; i++)
                 {
                     Actor *npc = game.npc + i;                    
@@ -695,7 +718,8 @@ void frame()
                     if (d < 2.0f) {
                         game.availAction = ACTION_Talk;
                         game.talkableNPC = npc->info;
-                    }                    
+                        break;
+                    }
                 }
             }
         }
@@ -1014,8 +1038,8 @@ static void event(const sapp_event* e) {
                         }
                     } else if (game.availAction == ACTION_Inspect) {
 
-                        // TODO: dialog box
                         learn_word( game.currWord );
+                        game.show_dialog = true;
 
                     } else if (game.availAction == ACTION_Talk) {
                         game.show_dialog = true;
