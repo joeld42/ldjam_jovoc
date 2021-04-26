@@ -74,6 +74,8 @@ typedef struct Actor_s
     glm::vec3 pos;
 
     float travel; // for anim
+
+    ActorInfo *info;
 } Actor;
 
 #define CAM_HITE_ZOOMED ( 7.0f )
@@ -131,6 +133,8 @@ typedef struct GameState_s
     glm::vec3 inputDir;
     RoomInfo *currRoom;
     SleepZone *currSleep; // sleep zone you're standing on
+
+    ActorInfo *talkableNPC;
 
     bool keydown[MAX_KEYCODE];
 
@@ -273,6 +277,8 @@ static void init()
                 room->worldX + room->actor.tx, 
                 room->worldY - room->actor.ty, 0.0f );
 
+            // links
+            npc->info = &(room->actor);
             room->actor.npcIndex = game.numNPCs;
 
             game.numNPCs++;
@@ -440,6 +446,27 @@ bool inside_tile_rect( int tx, int ty, TileRect rect )
     }
 }
 
+void show_dialog_box( FONScontext *fs)
+{
+    ActorInfo *nfo = game.talkableNPC;
+
+    // Character Title
+    fonsSetFont(fs, font.font_normal);
+    fonsSetSize(fs, 72.0f );
+    fonsSetColor(fs, 0xFFFFFFFF );
+    fonsDrawText(fs, 40, 570, nfo->name, NULL);
+
+    wrap_dream_text( 60.0f, 900.0f, 630.0f, 
+        (char *)nfo->phrase[ game.dreamLevel ],
+        36.0f );
+
+// "The language of [Dreams] is hidden from us. We are counting down to the [blast],"
+//         " but instead of your [Numbers] I use a list of [Seabirds]: [Tern], [Awk], [Seagull], [albatross]. "
+//         "How a [Ship] having passed the [Line] was driven by [storms] to the cold [Country] towards the South Pole; "
+//         "and how from thence she made her course to the tropical Latitude of the Great Pacific Ocean; and of " 
+//         "the strange things that befell; and in what manner the Ancyent Marinere came back to his own Country.",
+}
+
 void frame()
 {
     /* pump the sokol-fetch message queues, and invoke response callbacks */
@@ -493,14 +520,21 @@ void frame()
         RoomInfo *room = room_for_world_pos( newPlayerPos );
         bool didCollide = true;
         if (room) {        
-            // get tile collision        
-            if (newPlayerPos.y < 0.0f) {
+            // get tile collision       
+            if (newPlayerPos.x >= 0.0f) {
                 tx = (int)newPlayerPos.x - room->worldX;
+            } else {
+                tx = (int)(newPlayerPos.x - 1) - room->worldX;
+            }
+
+            if (newPlayerPos.y < 0.0f) {
+                //tx = (int)newPlayerPos.x - room->worldX;
                 ty = -((int)newPlayerPos.y - room->worldY);
             } else {
-                tx = (int)newPlayerPos.x - room->worldX;
+                //tx = (int)newPlayerPos.x - room->worldX;
                 ty = -((int)(newPlayerPos.y + 1) - room->worldY);
             }
+            sdtx_printf( "pxy %3.2f %3.2f txty %d %d\n", newPlayerPos.x, newPlayerPos.y, tx, ty );
             
             didCollide = room->collision[ty*16+tx];
 
@@ -509,6 +543,8 @@ void frame()
         if (!didCollide)
         {
             game.player.pos = newPlayerPos;
+
+            game.availAction = ACTION_None;
 
             // Check if we're on a journal square
             if (room && room->journal.text)
@@ -530,7 +566,7 @@ void frame()
 
             // Check sleeps
             if ((room) && (game.availAction != ACTION_Journal))
-            {
+            {                
                 game.availAction = ACTION_None;
                 game.currSleep = NULL;
                 for (int i=0; i < 5; i++)
@@ -538,6 +574,7 @@ void frame()
                     SleepZone *sleep = room->sleeps + i;
                     if ((sleep->rect.w > 0) && (sleep->rect.h > 0))
                     {
+                        sdtx_printf("Checking sleep.... %d\n", i);
                         if (inside_tile_rect( tx, ty, sleep->rect )) {
                             game.currSleep = sleep;
                             if (sleep->asleepHere) {
@@ -548,6 +585,20 @@ void frame()
                             break;
                         }
                     }
+                }
+            }
+
+            if ((room) && (game.availAction != ACTION_Journal))
+            {
+                // See if we are near enough to talk to somebody
+                for (int i=0; i < game.numNPCs; i++)
+                {
+                    Actor *npc = game.npc + i;                    
+                    float d = glm::length( npc->pos - game.player.pos);
+                    if (d < 2.0f) {
+                        game.availAction = ACTION_Talk;
+                        game.talkableNPC = npc->info;
+                    }                    
                 }
             }
         }
@@ -708,6 +759,10 @@ void frame()
                 btnAction = game.btnSleep;
             } else if (game.availAction == ACTION_Wake) {
                 btnAction = game.btnWake;                
+            } else if (game.availAction == ACTION_Talk) {
+                btnAction = game.btnTalk;
+            } else if (game.availAction == ACTION_Inspect) {                
+                btnAction = game.btnInspect;
             }            
 
             tk_push_sprite_scaled( btnAction, glm::vec3( (canv_width / 2.0f), 80.0f, 0.0f ), 400.0 );       
@@ -726,7 +781,7 @@ void frame()
     sgl_ortho(0.0f, textSz * aspect, textSz, 0.0f, -1.0f, +1.0f);
 
     sdtx_color3b( 0x6c, 0x17, 0xff );
-    sdtx_printf("Dream Level: %d\n", game.dreamLevel - 1 );
+    sdtx_printf("\n\n\n\nDream Level: %d\n", game.dreamLevel - 1 );
     sdtx_printf("Avail: %d\n", game.availAction );
 
     sdtx_color3b( 0x20, 0xFF, 0xFF );
@@ -782,40 +837,10 @@ void frame()
         }
 
         if (game.show_dialog) {
-        
-            // Character Title
-            fonsSetFont(fs, font.font_normal);
-            fonsSetSize(fs, 72.0f );
-            fonsSetColor(fs, white32 );
-            fonsDrawText(fs, 40, 570, "Arthur", NULL);
 
-            wrap_dream_text( 60.0f, canv_width - 200.0f, 630.0f, 
-                "The language of [Dreams] is hidden from us. We are counting down to the [blast],"
-                " but instead of your [Numbers] I use a list of [Seabirds]: [Tern], [Awk], [Seagull], [albatross]. "
-                "How a [Ship] having passed the [Line] was driven by [storms] to the cold [Country] towards the South Pole; "
-                "and how from thence she made her course to the tropical Latitude of the Great Pacific Ocean; and of " 
-                "the strange things that befell; and in what manner the Ancyent Marinere came back to his own Country.",
-                36.0f );
-
-            // fonsSetFont(fs, font.font_normal);
-            // fonsSetSize(fs, 72.0f );
-            // fonsSetColor(fs, white32 );
-            // fonsDrawText(fs, 40, 570, "Arthur", NULL);
-
-            // fonsSetFont(fs, font.font_normal);
-            // fonsSetSize(fs, 36.0f );
-            // fonsSetColor(fs, black32 );
-            // cx = fonsDrawText(fs, cx, cy, "The language of ", NULL);
-
-            // fonsSetFont(fs, font.font_dream);
-            // fonsSetSize(fs, 36.0f );
-            // fonsSetColor(fs, blue32 );
-            // cx = fonsDrawText(fs, cx, cy, "Dreams", NULL);
-
-            // fonsSetFont(fs, font.font_normal);
-            // fonsSetSize(fs, 36.0f );
-            // fonsSetColor(fs, black32 );
-            // cx = fonsDrawText(fs, cx, cy, " is hidden from us.", NULL);
+            show_dialog_box( fs );
+               
+            
         }
     } else {
         sdtx_printf("Fons not loaded\n");
@@ -861,6 +886,8 @@ static void event(const sapp_event* e) {
                 if (game.show_journal) {
                     game.currRoom->journal.viewed = true;
                     game.show_journal = false;
+                } else if (game.show_dialog) {
+                    game.show_dialog = false;
                 } else {
                     // Do avail actions
                     if (game.availAction == ACTION_Journal) 
@@ -878,6 +905,8 @@ static void event(const sapp_event* e) {
                         if (game.currSleep) {
                             game.currSleep->asleepHere = false;
                         }
+                    } else if (game.availAction == ACTION_Talk) {
+                        game.show_dialog = true;
                     }
                 }
 

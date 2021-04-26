@@ -154,6 +154,37 @@ sg_shader make_dream_shader( int level )
             "void main() {\n"
             "  gl_FragColor = texture2D(tex, uv) * color;\n"            
             "}\n";
+	} 
+	else if (level == 2)
+	{	
+		// level 0 --  grayscalify
+		shader_desc.fs.source =
+            "precision mediump float;\n"
+            "uniform sampler2D tex;\n"
+			"uniform vec4 time;\n"
+            "varying vec4 color;\n"
+            "varying vec2 uv;\n"
+            "varying vec2 p;"
+            "void main() {\n"
+            "  vec4 col = texture2D(tex, uv) * color;\n"
+            "  float v = dot( col.rgb, vec3(0.2126, 0.7152, 0.0722));\n"
+            "  gl_FragColor = vec4( v, 0.0, 1.0-v,  col.a );"
+            "}\n";	            
+	}
+	else if (level == 3)
+	{	
+		// level 0 --  grayscalify
+		shader_desc.fs.source =
+            "precision mediump float;\n"
+            "uniform sampler2D tex;\n"
+			"uniform vec4 time;\n"
+            "varying vec4 color;\n"
+            "varying vec2 uv;\n"
+            "varying vec2 p;"
+            "void main() {\n"
+            "  vec4 col = texture2D(tex, uv) * color;\n"            
+            "  gl_FragColor = vec4( vec3( 1.0 ) - col.rgb,  col.a );"
+            "}\n";	                        
 	} else {
 		shader_desc.fs.source =
             "precision mediump float;\n"
@@ -309,8 +340,6 @@ void tk_sprite_update_sdef( TKSpriteDef *sdef, int width, int height)
 
 
 static void tksprite_fetch_callback(const sfetch_response_t* response) {
-
-	printf("in tksprite_fetch_callback\n");
 	
     if (response->fetched) {
         /* the file data has been fetched, since we provided a big-enough
@@ -623,9 +652,11 @@ void tk_push_sprite_tilemap( TKSpriteHandle sh, RoomInfo *map, glm::vec3 roomPos
 		int ty = -tt->ty; // FIXME: ty is negative in data 
 		int ndx = ty * 16 + tx;
 		
-		// if (map->collision[ndx]) {
-		// 	color = glm::vec4( 1.0f, 0.0f, 0.0f, 1.0f );
-		// }
+		if (map->collision[ndx]) {
+		 	color = glm::vec4( 1.0f, 0.0f, 0.0f, 1.0f );
+		 } else {
+			color = { 1.0f, 1.0f, 1.0f, 1.0f };	
+		 }
 
 		glm::vec3 pos = glm::vec3( (float)tt->tx, (float)tt->ty, 0.0f ) + roomPos;
 
@@ -667,7 +698,7 @@ void tk_sprite_drawgroups( glm::mat4 mvp, glm::mat4 ui_matrix )
 	dreamParams.mvp = mvp;
 	dreamParams.time = glm::vec4( sys->timer * 0.1f, sys->timer, sys->timer * 10.0f, sys->timer * 30.0f );
 
-	sdtx_printf("--- Have %d groups, %d batches (L %d)\n", sys->numSpriteGroups, sys->numBatches, sys->dreamLevel );
+	//sdtx_printf("--- Have %d groups, %d batches (L %d)\n", sys->numSpriteGroups, sys->numBatches, sys->dreamLevel );
 
 	sg_update_buffer( sys->bind.vertex_buffers[0], sys->drawverts, sys->numverts * sizeof(TKSpriteDrawVert));
 	sg_update_buffer( sys->bind.index_buffer, sys->indices, sys->numIndices * sizeof(uint16_t) );

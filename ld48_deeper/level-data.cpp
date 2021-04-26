@@ -203,6 +203,10 @@ RoomInfo room_LivingRoom = {
         "I am hoping the quiet and peaceful surroundings of this cottage in the countryside of Dordogne will be a salve for my much-frustrated writing.\n"
         "I mean to uncover the language of dreams. It feels important, almost urgent to do so. Therefore, this morning after waking I have resolved not to leave the house until I have learned five words of it.\n",
      },
+    .sleeps = {
+          { .rect = { .tx = 12, .ty = 4, .w = 2, .h = 3  } },
+          { .rect = { .tx = 4, .ty = 4, .w = 4, .h = 2  } },
+     },
 };
 
 
@@ -402,6 +406,9 @@ RoomInfo room_Basement = {
      { .tx = 14, .ty = -10, .st0 = { 0.34146341463414637, 0.5121951219512195 }, .st1 = { 0.36585365853658536, 0.5365853658536586 } }, 
      { .tx = 15, .ty = -10, .st0 = { 0.36585365853658536, 0.5121951219512195 }, .st1 = { 0.3902439024390244, 0.5365853658536586 } }, 
    },
+    .sleeps = {
+          { .rect = { .tx = 12, .ty = 4, .w = 2, .h = 3  }, .asleepHere = true },
+     },
     .actor = {
         .name = "Jamal",
         .tx = 10, .ty = 6,
@@ -822,6 +829,9 @@ RoomInfo room_Level_3 = {
      { .tx = 14, .ty = -10, .st0 = { 0.34146341463414637, 0.24390243902439024 }, .st1 = { 0.36585365853658536, 0.2682926829268293 } }, 
      { .tx = 15, .ty = -10, .st0 = { 0.36585365853658536, 0.24390243902439024 }, .st1 = { 0.3902439024390244, 0.2682926829268293 } }, 
    },
+    .sleeps = {
+          { .rect = { .tx = 2, .ty = 4, .w = 2, .h = 3  } },
+     },
     .actor = {
         .name = "Janet",
         .tx = 7, .ty = 7,
@@ -1032,6 +1042,9 @@ RoomInfo room_Level_4 = {
      { .tx = 14, .ty = -10, .st0 = { 0.34146341463414637, 0.5121951219512195 }, .st1 = { 0.36585365853658536, 0.5365853658536586 } }, 
      { .tx = 15, .ty = -10, .st0 = { 0.36585365853658536, 0.5121951219512195 }, .st1 = { 0.3902439024390244, 0.5365853658536586 } }, 
    },
+    .sleeps = {
+          { .rect = { .tx = 12, .ty = 4, .w = 2, .h = 3  } },
+     },
     .actor = {
         .name = "Tulio",
         .tx = 10, .ty = 7,
@@ -1242,6 +1255,9 @@ RoomInfo room_Bedroom = {
      { .tx = 14, .ty = -10, .st0 = { 0.34146341463414637, 0.24390243902439024 }, .st1 = { 0.36585365853658536, 0.2682926829268293 } }, 
      { .tx = 15, .ty = -10, .st0 = { 0.36585365853658536, 0.24390243902439024 }, .st1 = { 0.3902439024390244, 0.2682926829268293 } }, 
    },
+    .sleeps = {
+          { .rect = { .tx = 2, .ty = 2, .w = 2, .h = 3  } },
+     },
     .actor = {
         .name = "Esme",
         .tx = 4, .ty = 6,

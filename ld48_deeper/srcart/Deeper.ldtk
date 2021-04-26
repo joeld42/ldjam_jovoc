@@ -390,17 +390,6 @@
 						},
 						{
 							"__identifier": "Door",
-							"__grid": [1,5],
-							"__pivot": [0,0],
-							"__tile": null,
-							"width": 25,
-							"height": 25,
-							"defUid": 5,
-							"px": [25,125],
-							"fieldInstances": []
-						},
-						{
-							"__identifier": "Door",
 							"__grid": [7,9],
 							"__pivot": [0,0],
 							"__tile": null,
@@ -431,17 +420,6 @@
 							"defUid": 6,
 							"px": [300,100],
 							"fieldInstances": [{ "__identifier": "asleepHere", "__value": false, "__type": "Bool", "defUid": 20, "realEditorValues": [] }]
-						},
-						{
-							"__identifier": "Door",
-							"__grid": [0,5],
-							"__pivot": [0,0],
-							"__tile": null,
-							"width": 25,
-							"height": 25,
-							"defUid": 5,
-							"px": [0,125],
-							"fieldInstances": []
 						},
 						{
 							"__identifier": "JournalText",

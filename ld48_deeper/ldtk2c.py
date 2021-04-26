@@ -165,6 +165,8 @@ class TileLevel( object ):
 					if fid == 'asleepHere':
 						asleepHere = ff['__value']
 
+				level.sleeps.append( (px, py, w, h, asleepHere) )
+
 			elif (etype == 'Actor'):
 				px, py = ent['__grid']
 				name = "UNKNOWN"
