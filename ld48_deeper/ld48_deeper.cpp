@@ -922,44 +922,46 @@ void frame()
             wrap_dream_text( col_journalstart, col_journalend, 85.0f, game.currRoom->journal.text, 20.0f );
 
         } else if (game.show_wordlist) {
-            float col_dreamword = (canv_width / 2.0f) - 300.0f;
-            float col_realword = col_dreamword + 150.0f;
-            float col_sep = col_realword - 50.0f;
+            float col_dreamword = 130.0f;
+            float col_realword = 350.0f;
+            float col_sep = (col_realword + col_dreamword) / 2.0 + 20.0;
             float rowstart = 120;
 
-            const char *words[] = {
-                "Aderyn",  "Bird",
-                "Pentref", "Village",
-                "Trychfil", "Insect",
-                "Llaesu",   "Relax",
-                "Afon",  "River",
-                "Nant", "Stream",
-                "Gweld", "Look",
-                "Porfa", "Grass"
-            };
-
     
-            fonsSetFont(fs, font.font_dream);
-            fonsSetSize(fs, 24.0f );
-            fonsSetColor(fs, black32 );            
+            // fonsSetFont(fs, font.font_dream);
+            // fonsSetSize(fs, 24.0f );
+            // fonsSetColor(fs, black32 );            
             float cy = rowstart;
-            for (int i=0; i < 8; i++)
+            // only show the Act I words
+            for (int i=0; i < 16; i++ ) 
             {
-                fonsDrawText(fs, col_dreamword, cy, words[i*2], NULL);
-                cy += 36.0f;
+                DreamWord *dw = g_words+i;
+
+                float offs = 0;
+                if (i > 9) {
+                    offs = (i - 9) * 5;
+                }
+
+
+                emit_dream_text( fs, dw->real, col_dreamword + offs, cy, 24.0f );
+                cy += 24.0f;
             }
 
             fonsSetFont(fs, font.font_normal );
             fonsSetSize(fs, 24.0f );
             fonsSetColor(fs, black32 );
+            fonsSetAlign( fs, FONS_ALIGN_BASELINE | FONS_ALIGN_RIGHT );
             cy = rowstart;
 
-            for (int i=0; i < 8; i++)
+            for (int i=0; i < 16; i++ ) 
             {
+                DreamWord *dw = g_words+i;
                 fonsDrawText(fs, col_sep, cy, "...", NULL);
-                fonsDrawText(fs, col_realword, cy, words[i*2+1], NULL);
-                cy += 36.0f;
+                fonsDrawText(fs, col_realword, cy, dw->learned?dw->real:"????", NULL);
+                cy += 24.0f;
             }
+
+            fonsSetAlign( fs, FONS_ALIGN_BASELINE | FONS_ALIGN_LEFT );
         }
 
         if (game.show_dialog) {
@@ -1051,6 +1053,9 @@ static void event(const sapp_event* e) {
                     }
                 }
 
+            }
+            else if (e->key_code == SAPP_KEYCODE_W) {
+                game.show_wordlist = !game.show_wordlist;
             }
 
             // DEBUG KEYS
