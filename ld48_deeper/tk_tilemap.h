@@ -39,7 +39,7 @@ typedef struct DreamWordInfo_s {
 	const char *message;	
 } DreamWordInfo;
 
-#define MAX_TILES_PER_ROOM (500)
+#define MAX_TILES_PER_ROOM (600)
 typedef struct RoomInfo_s {
     const char name[32];
     int worldX;

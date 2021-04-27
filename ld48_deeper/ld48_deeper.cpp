@@ -194,6 +194,14 @@ static void font_dream_loaded(const sfetch_response_t* response) {
     }
 }
 
+void setup_sprites( Actor *actor, int xx, int yy )
+{
+    glm::vec2 offs = glm::vec2(  xx * (1.0/4.0f), yy * (1.0/3.0f) );
+    actor->sprHead = tk_sprite_make_st( "chars_new.png", glm::vec2( 64.0 / 1024.0, 21.0 / 1024.0 ) + offs, glm::vec2( 195.0 / 1024.0, 146.0 / 1024.0 ) + offs );
+    actor->sprBody = tk_sprite_make_st( "chars_new.png", glm::vec2( 64.0 / 1024.0, 155.0 / 1024.0 ) + offs, glm::vec2( 195.0 / 1024.0, 1.0 / 3.0 ) + offs );
+    actor->sprHand = tk_sprite_make_st( "chars_new.png", glm::vec2( 0.0 / 1024.0, 117.0 / 1024.0 ) + offs, glm::vec2( 57.0 / 1024.0, 179.0 / 1024.0 ) + offs );
+}
+
 static void init()
 {
 	// setup WebGL1 context, no antialias
@@ -265,9 +273,10 @@ static void init()
     // Set up game resources
     //game.spritePlayer = tk_sprite_make_st( "player.png", glm::vec2( 0.0, 0.0 ), glm::vec2( 0.25, 0.5 ) );
 
-    game.player.sprHead = tk_sprite_make_st( "chars_new.png", glm::vec2( 64.0 / 1024.0, 21.0 / 1024.0 ), glm::vec2( 195.0 / 1024.0, 146.0 / 1024.0 ) );
-    game.player.sprBody = tk_sprite_make_st( "chars_new.png", glm::vec2( 64.0 / 1024.0, 155.0 / 1024.0 ), glm::vec2( 195.0 / 1024.0, 1.0 / 3.0 ) );
-    game.player.sprHand = tk_sprite_make_st( "chars_new.png", glm::vec2( 0.0 / 1024.0, 117.0 / 1024.0 ), glm::vec2( 57.0 / 1024.0, 179.0 / 1024.0 ) );
+    //game.player.sprHead = tk_sprite_make_st( "chars_new.png", glm::vec2( 64.0 / 1024.0, 21.0 / 1024.0 ), glm::vec2( 195.0 / 1024.0, 146.0 / 1024.0 ) );
+    //game.player.sprBody = tk_sprite_make_st( "chars_new.png", glm::vec2( 64.0 / 1024.0, 155.0 / 1024.0 ), glm::vec2( 195.0 / 1024.0, 1.0 / 3.0 ) );
+    //game.player.sprHand = tk_sprite_make_st( "chars_new.png", glm::vec2( 0.0 / 1024.0, 117.0 / 1024.0 ), glm::vec2( 57.0 / 1024.0, 179.0 / 1024.0 ) );
+    setup_sprites( &game.player, 0, 0 );
 
     game.spriteTilemap = tk_sprite_make( "dreams_tileset.png");
 
@@ -305,9 +314,27 @@ static void init()
             Actor *npc = game.npc + game.numNPCs;
             
             // TODO: use different sprites
-            npc->sprHead = game.player.sprHead;
-            npc->sprBody = game.player.sprBody;
-            npc->sprHand = game.player.sprHand;
+            // npc->sprHead = game.player.sprHead;
+            // npc->sprBody = game.player.sprBody;
+            // npc->sprHand = game.player.sprHand;
+            int sx=0;
+            int sy = 0;
+            if (!strcmp(room->actor.name, "Arthur")) {
+                sx = 1;
+            } else if (!strcmp(room->actor.name, "Janet")) {
+                sx = 2;
+            } else if (!strcmp(room->actor.name, "Tulio")) {
+                sx = 3;
+            } else if (!strcmp(room->actor.name, "Esme")) {
+                sx = 0; sy = 1;                
+            } else if (!strcmp(room->actor.name, "Jamal")) {
+                sx = 1; sy = 1;                                
+            } else if (!strcmp(room->actor.name, "Sandy")) {
+                sx = 2; sy = 1;
+            } else if (!strcmp(room->actor.name, "CAPTAIN")) {
+                sx = 3; sy = 1;                                                                
+            }
+            setup_sprites( npc, sx, sy );
 
             npc->pos = glm::vec3( 
                 room->worldX + room->actor.tx, 

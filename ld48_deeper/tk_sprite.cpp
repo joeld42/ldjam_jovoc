@@ -22,7 +22,7 @@
 // TODO make growable
 #define TKSPRITE_MAX_BATCHES (100)
 
-static uint8_t tksprite_fetch_buffer[1024 * 1024 * 6];
+static uint8_t tksprite_fetch_buffer[1024 * 1024 * 21];
 
 typedef struct TKSpriteDrawVert_s
 {
@@ -652,11 +652,11 @@ void tk_push_sprite_tilemap( TKSpriteHandle sh, RoomInfo *map, glm::vec3 roomPos
 		int ty = -tt->ty; // FIXME: ty is negative in data 
 		int ndx = ty * 16 + tx;
 		
-		if (map->collision[ndx]) {
-		 	color = glm::vec4( 1.0f, 0.0f, 0.0f, 1.0f );
-		 } else {
-			color = { 1.0f, 1.0f, 1.0f, 1.0f };	
-		 }
+		// if (map->collision[ndx]) {
+		//  	color = glm::vec4( 1.0f, 0.0f, 0.0f, 1.0f );
+		//  } else {
+		// 	color = { 1.0f, 1.0f, 1.0f, 1.0f };	
+		//  }
 
 		glm::vec3 pos = glm::vec3( (float)tt->tx, (float)tt->ty, 0.0f ) + roomPos;
 

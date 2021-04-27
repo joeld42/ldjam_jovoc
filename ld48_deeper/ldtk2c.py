@@ -45,6 +45,13 @@ PHRASES = {
          "Tulio says he feels trapped here, but where would he go? We are all trapped on this [world].",
          "Sometimes the [answer] is to enjoy the [rain], like a [seabird].",
   ],
+	'CAPTAIN' : [
+         "I am a [dreamer], and a [dreamer] can only [find] his [path] by [moonlight], and his [punishment] is that he sees the [dawn] [before] the [rest] of the [world].",
+			"...",
+			"...",
+			"...",
+			"...",
+  ],
 }
 
 
