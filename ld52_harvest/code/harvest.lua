@@ -3,8 +3,9 @@ function _init()
     pulse = 0
     cx = 0
     ctarg_x = 0
-    cfruit = 64
-    nxtfruit = 66
+    
+    cfruit = 1
+    nxtfruit = cfruit+1
     vp = 0
     fruitleft = 0
     
@@ -18,6 +19,13 @@ function _init()
     bgy=0
 
     msgs = {}
+
+    fruitinfo = {
+        { name="apple", fnum=64, cbase=8, cdark=2, cbrite=14 },
+        { name="orange", fnum=64, cbase=9, cdark=4, cbrite=10 },
+        { name="pumpkin", fnum=66, cbase=4, cdark=2, cbrite=9 },
+        { name="strawberry", fnum=66, cbase=8, cdark=3, cbrite=14 },
+    }
     
     shopitems = {}    
     shopitemdirs = {
@@ -28,10 +36,10 @@ function _init()
     }
 
     shopitembuilds = {
-        { name="pOLISHER", price=5, icon=192 },
-        { name="bLENDER", price=8, icon=194 },
-        { name="cLONEjAR", price=10, icon=194 },
-        { name="cANNER", price=6, icon=194 },
+        { name="fANCIFIER", price=5, icon=194 },
+        { name="bLENDER", price=8, icon=196 },
+        { name="cLONEjAR", price=10, icon=198 },
+        { name="cANNER", price=6, icon=192 },
     }
 
     -- read the initial grid from the map
@@ -92,12 +100,14 @@ function fruit_update( f )
                 if gg == nil then 
                     done = 1
                 else 
+                    -- process the fruit
+                    process_fruit( f, gg )
+
                     -- move to the next grid                    
                     f.nxcol = f.nxcol + gg.dx
                     f.nxrow = f.nxrow + gg.dy                    
 
-                    -- age the fruit
-                    f.age = f.age + 1
+                    -- age the fruit 
                     if (f.age > 10) then
                         -- todo spawn spoilage particles
                         spawn_msg( f.sx-12, f.sy, "Spoiled!", 11 )
@@ -117,10 +127,32 @@ function fruit_update( f )
     
 end
 
+function process_fruit( f, g )
+    if (g.icon == 192) then
+        -- canner
+        f.fnum = 96
+        f.age = -10 -- reset the age
+        f.name = "canned " .. f.name
+    elseif (g.icon == 194) then
+        -- fancifier
+        f.coutline = 10
+        f.name = "fancy " .. f.name
+    elseif (g.icon == 196) then
+        -- blender
+        f.fnum = 98
+        f.age = 0
+        f.name = f.name .. " smoothie"
+    end
+end
+
 function score_fruit( f )
+
+    local name = f.name
+
     local p = flr(rnd(3))+1
     vp = vp + p
-    spawn_msg( f.sx+(rnd(12)-10), f.sy-10, tostr(p), 10 )
+    name = name .. " $" .. tostr(p)
+    spawn_msg( f.sx-(#name*4), f.sy-10, name, 10 )
 end
 
 
@@ -142,14 +174,20 @@ function make_grid( dx, dy )
 end
 
 -- fruits --
-function make_fruit( fnum, col, row, sx, sy, upd )
+function make_fruit( finfo_ndx, col, row, sx, sy, upd )
+    local finfo = fruitinfo[finfo_ndx]
     local ff = {
-        fnum = fnum,
+        fnum = finfo.fnum,
+        name= finfo.name,
+        cbase = finfo.cbase,
+        cdark = finfo.cdark,
+        cbrite = finfo.cbrite,
+        coutline = 7,
         col=col, row=row,
         nxcol=col, nxrow=row,        
         sx=sx, sy=sy,
         age=0,
-        vp=1,
+        vp=1,        
         tick=cocreate( fruit_update )
     }
     add( fruits, ff )
@@ -160,7 +198,11 @@ function draw_fruits()
     
     local spoil_age = 6
     for f in all(fruits) do
-        if f.age < spoil_age then                         
+        if f.age < spoil_age then
+            pal( 8, f.cbase ) -- base color
+            pal( 2, f.cdark ) -- dark color
+            pal( 14, f.cbrite ) -- highlight color
+            pal( 7, f.coutline ) -- outline color
             spr( f.fnum, f.sx-8, f.sy-8, 2, 2 )
         end
     end
@@ -173,12 +215,17 @@ function draw_fruits()
         end
     end
 
+    -- restore pallette
     pal()
 
 end
 
 function draw_dropfruit()
-    spr( cfruit, cx-8, -abs(1.0-pulse)*4  , 2, 2 )
+    local fi = fruitinfo[ cfruit ]
+    pal( 8, fi.cbase ) -- base color
+    pal( 2, fi.cdark ) -- dark color
+    pal( 14, fi.cbrite ) -- highlight color        
+    spr( fi.fnum, cx-8, -abs(1.0-pulse)*4  , 2, 2 )
 end
 
 function draw_msgs()
@@ -228,8 +275,8 @@ function fruit_cursor()
         fruitleft -= 1
 
         cfruit = nxtfruit
-        nxtfruit += 2
-        if nxtfruit > 66 then nxtfruit=64 end
+        nxtfruit += 1
+        if nxtfruit > #fruitinfo then nxtfruit=1 end
     end
     
 end
@@ -466,12 +513,19 @@ function _draw()
 
     -- fruit left
     if fruitleft > 0 then
-        local sx, sy = (nxtfruit % 16) * 8, flr(nxtfruit \ 16) * 8
-        --spr( nxtfruit, 100, 2 )
+        local fi = fruitinfo[nxtfruit]
+        local sx, sy = (fi.fnum % 16) * 8, flr(fi.fnum \ 16) * 8
+        
+
+        pal( 8, fi.cbase ) -- base color
+        pal( 2, fi.cdark ) -- dark color
+        pal( 14, fi.cbrite ) -- highlight color        
         sspr( sx, sy, 16, 16, 100, 12, 8, 8 )
+
         local fl = tostr(fruitleft)
         print( fl, 111, 14, 0 )
         print( fl, 110, 13, 7 )
+        pal()
     end
 
     -- buy round    
