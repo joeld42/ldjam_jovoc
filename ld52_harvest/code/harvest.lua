@@ -1,5 +1,6 @@
 function _init()
     slot = 0
+    mode = 1 -- 0 = title, 1 = harvest, 2 = game, 3 = scoreboard
     pulse = 0
     cx = 0
     ctarg_x = 0
@@ -9,6 +10,9 @@ function _init()
     vp = 0
     fruitleft = 5
     
+    gmy = 0
+    gmytarg = 16*8+4
+
     shopy = 129
     shopytarg = 70
     shopsel=0
@@ -68,11 +72,15 @@ function _init()
 end
 
 function grid_ndx( col, row )
+    if (col < 0) or (col >= 5) or
+        (row < 0) or (row >= 5) then
+            return nil
+        end
     return col + row * 5
 end
 
 function grid_pos( col, row )
-    return 12 + col*24, 16 + row*24
+    return 12 + col*24, (16*9) + row*24
 end
 
 function fruit_update( f )
@@ -101,6 +109,7 @@ function fruit_update( f )
             if f.nxrow < 5 then
                 
                 local gndx = grid_ndx( f.nxcol, f.nxrow )
+                
                 local gg = grid[gndx]
                 if gg == nil then 
                     done = 1
@@ -109,16 +118,18 @@ function fruit_update( f )
                     -- move to the next grid                    
                     f.nxcol = f.nxcol + gg.dx
                     f.nxrow = f.nxrow + gg.dy
-                    
-                    -- process the fruit
-                    process_fruit( f, gg )
 
-                    -- age the fruit 
-                    if (f.age > 10) then
-                        -- todo spawn spoilage particles
-                        spawn_msg( f.sx-12, f.sy, "Spoiled!", 11 )
+                    -- check if the fruit has visited this spot before
+                    if f.visited[gndx] or (f.nxcol < 0) or (f.nxcol > 4) then
+                        spawn_msg( f.sx-12, f.sy, "Malfunction!", 11 )
                         return
                     end
+                    f.visited[gndx] = true
+                    
+                    
+                    -- process the fruit
+                    process_fruit( f, gg, gndx )
+                    
                 end
 
             else
@@ -133,11 +144,10 @@ function fruit_update( f )
     
 end
 
-function process_fruit( f, g )
+function process_fruit( f, g, gndx )
     if (g.icon == 192) then
         -- canner
         f.fnum = 96
-        f.age = -10 -- reset the age
         f.name = "canned " .. f.name
     elseif (g.icon == 194) then
         -- fancifier
@@ -145,11 +155,10 @@ function process_fruit( f, g )
         f.name = "fancy " .. f.name
     elseif (g.icon == 198) then
         -- clone jar
-        clone_fruit(f)
+        clone_fruit(f,gndx)
     elseif (g.icon == 196) then
         -- blender
-        f.fnum = 98
-        f.age = 0
+        f.fnum = 98        
         f.name = f.name .. " smoothie"
     end
 end
@@ -195,7 +204,7 @@ function make_fruit( finfo_ndx, col, row, sx, sy, upd )
         col=col, row=row,
         nxcol=col, nxrow=row,        
         sx=sx, sy=sy,
-        age=0,
+        visited={},
         vp=1,  
         delay=0,      
         tick=cocreate( fruit_update )
@@ -204,7 +213,7 @@ function make_fruit( finfo_ndx, col, row, sx, sy, upd )
     assert(coresume( ff.tick, ff ))
 end
 
-function clone_fruit( f )
+function clone_fruit( f, gndx )
     local ff = {
         tick=cocreate( fruit_update )
     }
@@ -213,8 +222,9 @@ function clone_fruit( f )
             ff[k] = v
         end
     end
+    ff.visited = {}
+    ff.visited[gndx] = true
     ff.delay=20
-    ff.age = 0
 
     add( fruits, ff )
     assert(coresume( ff.tick, ff ))
@@ -222,23 +232,12 @@ end
 
 function draw_fruits()    
     
-    local spoil_age = 6
     for f in all(fruits) do
-        if f.age < spoil_age then
-            pal( 8, f.cbase ) -- base color
-            pal( 2, f.cdark ) -- dark color
-            pal( 14, f.cbrite ) -- highlight color
-            pal( 7, f.coutline ) -- outline color
-            spr( f.fnum, f.sx-8, f.sy-8, 2, 2 )
-        end
-    end
-
-    -- draw fruits about to spoil with a different palette
-    pal( { [0]=3,3,3,3,  3,3,11,11,  3,3,11,7,  11,11,11,11 })
-    for f in all(fruits) do
-        if f.age >= spoil_age then                         
-            spr( f.fnum, f.sx-8, f.sy-8, 2, 2 )
-        end
+        pal( 8, f.cbase ) -- base color
+        pal( 2, f.cdark ) -- dark color
+        pal( 14, f.cbrite ) -- highlight color
+        pal( 7, f.coutline ) -- outline color
+        spr( f.fnum, f.sx-8, f.sy-8, 2, 2 )
     end
 
     -- restore pallette
@@ -251,7 +250,7 @@ function draw_dropfruit()
     pal( 8, fi.cbase ) -- base color
     pal( 2, fi.cdark ) -- dark color
     pal( 14, fi.cbrite ) -- highlight color        
-    spr( fi.fnum, cx-8, -abs(1.0-pulse)*4  , 2, 2 )
+    spr( fi.fnum, cx-8, (16*8) -abs(1.0-pulse)*4  , 2, 2 )
 end
 
 function draw_msgs()
@@ -288,15 +287,27 @@ function fruit_cursor()
         slot = slot - 1
         if slot < 0 then slot = 4 end
     end
-    
+
     if (btnp(1)) then
         slot = slot + 1
         if slot > 4 then slot = 0 end
     end
+    
+    if (btnp(3)) then
+        mode = 2
+        gmytarg = 30*8
+    end
+
+    if (btnp(2)) then
+        mode = 1
+        gmytarg = 16*8+2
+    end
+
+    
 
     if (btnp(5)) then
         
-        make_fruit( cfruit,  slot,0, cx, 0)
+        make_fruit( cfruit,  slot, 0, cx, gmy+4)
 
         fruitleft -= 1
 
@@ -307,32 +318,36 @@ function fruit_cursor()
     
 end
 
+function gen_shop_item()
+    local genitem = {}
+
+    local genitemdir = rnd( shopitemdirs )
+    local genitembuild = rnd( shopitembuilds )
+    
+    for k,v in pairs(genitemdir) do            
+        genitem[k] = v
+    end
+    for k,v in pairs(genitembuild) do
+        genitem[k] = v
+    end
+
+    for k,v in pairs(genitem) do
+        printh( tostr(k) .. " -> " .. tostr(v) )
+    end
+
+    return genitem
+end
+
 function open_shop()
 
 
     while #shopitems < 3 do
-
-        genitem = {}
-
-        local genitemdir = rnd( shopitemdirs )
-        local genitembuild = rnd( shopitembuilds )
-        
-        for k,v in pairs(genitemdir) do            
-            genitem[k] = v
-        end
-        for k,v in pairs(genitembuild) do
-            genitem[k] = v
-        end
-
-        for k,v in pairs(genitem) do
-            printh( tostr(k) .. " -> " .. tostr(v) )
-        end
-
-        add( shopitems, genitem )
+        add( shopitems, gen_shop_item() )
     end
 
     shopytarg = 70
     shopdone = false
+    shopsel=0
 end
 
 function shop_update()
@@ -365,7 +380,7 @@ function shop_update()
             else
                 printh( "Cant afford")
                 --spawn_msg( 8 * (shopsel-1)*35, shopy+47, "cANT aFFORD!", 6 ) 
-                spawn_msg( 35, shopy, "cANT aFFORD!", 8 ) 
+                spawn_msg( 35, gmy+ shopy, "cANT aFFORD!", 8 ) 
             end
         end    
 
@@ -408,10 +423,17 @@ function shop_update()
             end    
 
             -- build finished
-            shopytarg = 129        
-            shopdone = true
             buildx = -1
-            printh("Build complete ---- ")
+            buildy = -1
+            shopytarg = 70
+            
+            -- replace the built item
+            shopitems[shopsel+1] = gen_shop_item()
+
+            -- shopytarg = 129        
+            -- shopdone = true
+            -- buildx = -1
+            -- printh("Build complete ---- ")
 
         elseif (btnp(4)) then
             buildx = -1
@@ -502,7 +524,7 @@ function shop_draw()
         if (item.price > vp) then
             pcol = 8
         end
-        print( cc, xx+12, shopy+47, 7 )
+        print( cc, xx+12, shopy+47, pcol )
     end
 
     -- Done button        
@@ -513,9 +535,10 @@ end
 function _draw()
     
     -- map part
-    camera( -3, 0)
+    gmy = lerp( gmy, gmytarg, 0.2 )
+    camera( -3, gmy )
     cls(3)
-    map(0,16,0,4)
+    map(0,0,0,4)
 
     for i=0,4 do
         for j=0,4 do
@@ -528,13 +551,20 @@ function _draw()
         end
     end
 
-    -- player sprite
-    
+    -- player sprite    
     if (fruitleft > 0 ) then 
         draw_dropfruit()
     end
     draw_fruits()
     draw_msgs()
+
+    -- buy round    
+    if #shopitems > 0 then   
+        shop_draw()
+    end
+
+
+    camera(0,0)
 
     -- hud VP (coins)
     spr( 16, 100, 2 )
@@ -557,11 +587,6 @@ function _draw()
         print( fl, 111, 14, 0 )
         print( fl, 110, 13, 7 )
         pal()
-    end
-
-    -- buy round    
-    if #shopitems > 0 then   
-        shop_draw()
     end
 
     -- dbg    
