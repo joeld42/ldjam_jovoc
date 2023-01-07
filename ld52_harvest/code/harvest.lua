@@ -6,10 +6,34 @@ function _init()
     cfruit = 64
     nxtfruit = 66
     vp = 0
-    fruitleft = 20
+    fruitleft = 0
+    
+    shopy = 129
+    shopytarg = 70
+    shopsel=0
+    shopdone=true
+    buildx=-1
+    buildy=-1
+    bgx=0
+    bgy=0
 
     msgs = {}
     
+    shopitems = {}    
+    shopitemdirs = {
+        { mapx=17, dx=0, dy=1 },
+        { mapx=21, dx=-1, dy=0 },
+        { mapx=25, dx=1, dy=0 },
+        { mapx=29, dx=0, dy=-1 },
+    }
+
+    shopitembuilds = {
+        { name="pOLISHER", price=5, icon=192 },
+        { name="bLENDER", price=8, icon=194 },
+        { name="cLONEjAR", price=10, icon=194 },
+        { name="cANNER", price=6, icon=194 },
+    }
+
     -- read the initial grid from the map
     grid={}
     for i=0,4 do
@@ -107,11 +131,13 @@ function spawn_msg( x,y, msg, c )
     })
 end
 
+
 -- grid cells --
 function make_grid( dx, dy )
     return {
         dx=dx,
-        dy=dy
+        dy=dy,
+        icon=0
     }
 end
 
@@ -208,16 +234,121 @@ function fruit_cursor()
     
 end
 
+function open_shop()
+
+
+    while #shopitems < 3 do
+
+        genitem = {}
+
+        local genitemdir = rnd( shopitemdirs )
+        local genitembuild = rnd( shopitembuilds )
+        
+        for k,v in pairs(genitemdir) do            
+            genitem[k] = v
+        end
+        for k,v in pairs(genitembuild) do
+            genitem[k] = v
+        end
+
+        for k,v in pairs(genitem) do
+            printh( tostr(k) .. " -> " .. tostr(v) )
+        end
+
+        add( shopitems, genitem )
+    end
+
+    shopytarg = 70
+    shopdone = false
+end
+
+function shop_update()
+    
+
+    -- choose item menu
+    if (buildx < 0)then
+        if (btnp(0)) then
+            shopsel -= 1
+            if shopsel < 0 then shopsel = 3 end
+        elseif (btnp(1)) then
+            shopsel += 1
+            if shopsel > 3 then shopsel = 0 end
+        end
+
+        if (btnp(5)) then
+            shopytarg = 129        
+            if shopsel==3 then 
+                -- done button pressed
+                shopdone = true
+            else
+                -- buy/build an item
+                buildx = 3
+                buildy = 3
+                bgx = 64
+                bgy=128
+    
+            end
+        end    
+
+    else
+        -- place building
+        if (btnp(0)) then 
+            buildx -= 1
+            if (buildx < 0) then buildx = 4 end
+        end
+        if (btnp(1)) then 
+            buildx += 1
+            if (buildx > 4) then buildx = 0 end
+        end
+        if (btnp(2)) then 
+            buildy -= 1
+            if (buildy < 0) then buildy = 4 end
+        end
+        if (btnp(3)) then 
+            buildy += 1
+            if (buildy > 4) then buildy = 0 end
+        end
+
+        if (btnp(5)) then 
+            -- build
+            printh("BUILD")
+            local bitem = shopitems[ shopsel+1]
+            local gg = make_grid( bitem.dx, bitem.dy )            
+            gg.icon = 192
+            
+            grid[ grid_ndx(buildx,buildy) ] = gg
+            
+            -- copy build tile to map
+            for i=0,2 do
+                for j=0,2 do
+                    local gx, gy = grid_pos( i, j )
+                    local mt = mget( bitem.mapx + i, 16+j )
+                    mset( buildx*3 + i, 16+buildy*3+j, mt )
+                end
+            end    
+
+        elseif (btnp(4)) then
+            buildx = -1
+            buildy = -1
+            shopytarg = 70
+        end
+          
+    end
+
+    
+end
+
 function _update()
 
     -- drop cursor
-    if fruitleft > 0 then fruit_cursor() end
-    
-
-    if (btnp(4)) then
-        spawn_msg( 64, 64, "Hello!", 11 )
+    if fruitleft > 0 then fruit_cursor() 
+    elseif #fruits == 0 then
+        if (#shopitems == 0) then 
+            open_shop()
+        end
+        shop_update()    
     end
-
+    
     -- fruit update
     local active_fruits = {}
     for f in all(fruits) do
@@ -226,10 +357,67 @@ function _update()
             add( active_fruits, f )
         end
     end
-    fruits = active_fruits
-    --printh( tostr(#fruits) .. " active" )
+    fruits = active_fruits    
+end
 
+function shop_draw()
 
+    shopy = lerp( shopy, shopytarg, 0.2 ) 
+
+    -- moar fruit, back to game??
+    if (shopdone and shopy >= 127) then
+        fruitleft = 20
+        shopitems = {}
+    end
+
+    -- building?
+    if (buildx >= 0) then
+        pal( 5, 13 )
+        pal( 13, 12 )
+        local gx, gy = grid_pos( buildx, buildy )
+        bgx = lerp( bgx, gx, 0.3 )
+        bgy = lerp( bgy, gy, 0.3 )
+        rect( bgx-14, bgy-14, bgx+14, bgy+14, 12 )
+
+        bitem = shopitems[ shopsel+1 ]
+        map( bitem.mapx, 16, bgx-12, bgy-12, 4, 4 )
+        spr( bitem.icon, bgx-8, bgy-8, 2, 2 )
+
+        --spr( gg.icon, gx-8, gy-8, 2, 2 )
+        
+        local s = "❎ build 🅾️ cancel" 
+        print( s, 26, 121, 0)
+        print( s, 25, 120, 7)
+        
+        pal( 5, 5 )
+        pal( 13, 13 )
+    end    
+
+    -- draw buy panel
+    camera(0,0)
+    rectfill( 0, shopy, 34, shopy+10, 13 )
+    rectfill( 0, shopy+10, 128, 128, 13 )
+    print( "upgrade", 4, shopy+2, 12 )
+    for ndx, item in ipairs(shopitems) do
+        local xx = 8 + (ndx-1) * 35
+
+        if (shopsel == ndx-1) then
+            rectfill( xx-4, shopy+11, xx+28, shopy+55, 12 )
+        end
+
+        print( item.name, xx-3, shopy+12, 7)
+        map( item.mapx, 16, xx, shopy+20, 4, 4 )
+        spr( item.icon, xx+4, shopy+23, 2, 2 )
+
+        spr( 16, xx+2, shopy+46 )
+        local cc = tostr(item.price)
+        print( cc, xx+13, shopy+48, 0 )
+        print( cc, xx+12, shopy+47, 7 )
+    end
+
+    -- Done button        
+    rectfill( 106, shopy+30, 124, shopy+38, (shopsel==3 and 12 or 6 ) )
+    print( "done", 108, shopy+32, (shopsel==3 and 7 or 5 ) )
 end
 
 function _draw()
@@ -238,6 +426,17 @@ function _draw()
     camera( -3, 0)
     cls(3)
     map(0,16,0,4)
+
+    for i=0,4 do
+        for j=0,4 do
+            local gx, gy = grid_pos( i, j )
+            local gg = grid[ grid_ndx( 0, j )]
+            if (gg.icon != 0) then
+                spr( gg.icon, gx-8, gy-8, 2, 2 )
+            end
+            --circ( gx, gy, 4, 6 )
+        end
+    end
 
     -- player sprite
     
@@ -261,6 +460,11 @@ function _draw()
         local fl = tostr(fruitleft)
         print( fl, 111, 14, 0 )
         print( fl, 110, 13, 7 )
+    end
+
+    -- buy round    
+    if #shopitems > 0 then   
+        shop_draw()
     end
 
     -- dbg    
