@@ -7,7 +7,7 @@ function _init()
     cfruit = 1
     nxtfruit = cfruit+1
     vp = 0
-    fruitleft = 0
+    fruitleft = 5
     
     shopy = 129
     shopytarg = 70
@@ -32,7 +32,7 @@ function _init()
         { mapx=17, dx=0, dy=1 },
         { mapx=21, dx=-1, dy=0 },
         { mapx=25, dx=1, dy=0 },
-        { mapx=29, dx=0, dy=-1 },
+        -- { mapx=29, dx=0, dy=-1 },
     }
 
     shopitembuilds = {
@@ -79,6 +79,11 @@ function fruit_update( f )
     
     yield()
 
+    while f.delay > 0 do
+        f.delay -= 1
+        yield()
+    end
+
     local done = 0
     while done==0 do
         -- have we reached our next grid square?
@@ -100,12 +105,13 @@ function fruit_update( f )
                 if gg == nil then 
                     done = 1
                 else 
-                    -- process the fruit
-                    process_fruit( f, gg )
-
+                
                     -- move to the next grid                    
                     f.nxcol = f.nxcol + gg.dx
-                    f.nxrow = f.nxrow + gg.dy                    
+                    f.nxrow = f.nxrow + gg.dy
+                    
+                    -- process the fruit
+                    process_fruit( f, gg )
 
                     -- age the fruit 
                     if (f.age > 10) then
@@ -137,6 +143,9 @@ function process_fruit( f, g )
         -- fancifier
         f.coutline = 10
         f.name = "fancy " .. f.name
+    elseif (g.icon == 198) then
+        -- clone jar
+        clone_fruit(f)
     elseif (g.icon == 196) then
         -- blender
         f.fnum = 98
@@ -187,13 +196,30 @@ function make_fruit( finfo_ndx, col, row, sx, sy, upd )
         nxcol=col, nxrow=row,        
         sx=sx, sy=sy,
         age=0,
-        vp=1,        
+        vp=1,  
+        delay=0,      
         tick=cocreate( fruit_update )
     }
     add( fruits, ff )
     assert(coresume( ff.tick, ff ))
 end
-  
+
+function clone_fruit( f )
+    local ff = {
+        tick=cocreate( fruit_update )
+    }
+    for k,v in pairs(f) do
+        if k!="tick" then
+            ff[k] = v
+        end
+    end
+    ff.delay=20
+    ff.age = 0
+
+    add( fruits, ff )
+    assert(coresume( ff.tick, ff ))
+end
+
 function draw_fruits()    
     
     local spoil_age = 6
@@ -363,8 +389,7 @@ function shop_update()
         end
 
         if (btnp(5)) then 
-            -- build
-            printh("BUILD")            
+            -- build            
             local bitem = shopitems[ shopsel+1]
             local gg = make_grid( bitem.dx, bitem.dy )            
             gg.icon = bitem.icon
@@ -381,6 +406,12 @@ function shop_update()
                     mset( buildx*3 + i, 16+buildy*3+j, mt )
                 end
             end    
+
+            -- build finished
+            shopytarg = 129        
+            shopdone = true
+            buildx = -1
+            printh("Build complete ---- ")
 
         elseif (btnp(4)) then
             buildx = -1
@@ -421,7 +452,7 @@ function shop_draw()
 
     -- moar fruit, back to game??
     if (shopdone and shopy >= 127) then
-        fruitleft = 20
+        fruitleft = 5
         shopitems = {}
     end
 
