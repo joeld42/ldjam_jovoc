@@ -264,6 +264,7 @@ end
 
 function shop_update()
     
+    local bitem = shopitems[ shopsel+1]
 
     -- choose item menu
     if (buildx < 0)then
@@ -276,17 +277,22 @@ function shop_update()
         end
 
         if (btnp(5)) then
-            shopytarg = 129        
-            if shopsel==3 then 
+            
+            if not bitem then 
                 -- done button pressed
+                shopytarg = 129        
                 shopdone = true
-            else
-                -- buy/build an item
+            elseif bitem.price <= vp then
+                -- buy/build an item   
+                shopytarg = 129                     
                 buildx = 3
                 buildy = 3
                 bgx = 64
                 bgy=128
-    
+            else
+                printh( "Cant afford")
+                --spawn_msg( 8 * (shopsel-1)*35, shopy+47, "cANT aFFORD!", 6 ) 
+                spawn_msg( 35, shopy, "cANT aFFORD!", 8 ) 
             end
         end    
 
@@ -311,11 +317,13 @@ function shop_update()
 
         if (btnp(5)) then 
             -- build
-            printh("BUILD")
+            printh("BUILD")            
             local bitem = shopitems[ shopsel+1]
             local gg = make_grid( bitem.dx, bitem.dy )            
-            gg.icon = 192
-            
+            gg.icon = bitem.icon
+
+            vp -= bitem.price
+
             grid[ grid_ndx(buildx,buildy) ] = gg
             
             -- copy build tile to map
@@ -412,6 +420,10 @@ function shop_draw()
         spr( 16, xx+2, shopy+46 )
         local cc = tostr(item.price)
         print( cc, xx+13, shopy+48, 0 )
+        local pcol = 7
+        if (item.price > vp) then
+            pcol = 8
+        end
         print( cc, xx+12, shopy+47, 7 )
     end
 
@@ -430,7 +442,7 @@ function _draw()
     for i=0,4 do
         for j=0,4 do
             local gx, gy = grid_pos( i, j )
-            local gg = grid[ grid_ndx( 0, j )]
+            local gg = grid[ grid_ndx( i, j )]
             if (gg.icon != 0) then
                 spr( gg.icon, gx-8, gy-8, 2, 2 )
             end
