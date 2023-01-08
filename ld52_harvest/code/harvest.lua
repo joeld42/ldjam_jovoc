@@ -30,8 +30,7 @@ function _init()
     msgs = {}
 
     roundinfo = {
-        { name="fARMERS mARKET", desc="WARM UP!\nNO SPECIAL RULES", fkind=99, fmul=1 },
-        
+        { name="fARMERS mARKET", desc="WARM UP!\nNO SPECIAL RULES", fkind=99, fmul=1 },        
         { name="aPPLE a dAY", desc="APPLE ITEMS X3", fkind=1, fmul=3 },
         { name="oRANGE yOU gLAD", desc="CITRUS ITEMS X2", fkind=2, fmul=2 },        
         { name="pUMPKIN sPICE sEASON", desc="PUMPKIN ITEMS X2", fkind=3, fmul=2  },
@@ -528,7 +527,7 @@ function fruit_cursor()
 
     
 
-    if (btnp(5)) then
+    if (btnp(5)) and (rinfo != nil) then        
         sfx(4)
         make_fruit( cfruit,  slot, 0, cx, gmy+4)
 
@@ -662,7 +661,7 @@ function shop_update()
                 buildx = -1
             end
 
-        elseif (btnp(4)) then
+        elseif (btnp(4)) then            
             sfx(2)
             buildx = -1
             buildy = -1
@@ -695,6 +694,11 @@ function _update()
             end
             shop_update()    
         end
+    end
+
+    -- restart?
+    if btn(4) and btn(5) and (rinfo==nil) then       
+        run()
     end
     
     -- fruit update
@@ -809,7 +813,7 @@ function draw_scoreinfo()
 
         print( "--[ " .. tostr(vp) .. " ]--" , 42, 342, 7 )
         
-        --print( "⬆️ return to game", 30, 355, 7 )
+        print( "❎+🅾️ restart", 40, 355, 7 )
     end
 
     
