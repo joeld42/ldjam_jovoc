@@ -23,8 +23,22 @@ function _init()
     buildy=-1
     bgx=0
     bgy=0
+    buildleft=0
+
+    round = 1
 
     msgs = {}
+
+    roundinfo = {
+        { name="fARMERS mARKET", desc="WARM UP!\nNO SPECIAL RULES", fkind=99, fmul=1 },
+        
+        { name="aPPLE a dAY", desc="APPLE ITEMS X3", fkind=1, fmul=3 },
+        { name="oRANGE yOU gLAD", desc="CITRUS ITEMS X2", fkind=2, fmul=2 },        
+        { name="pUMPKIN sPICE sEASON", desc="PUMPKIN ITEMS X2", fkind=3, fmul=2  },
+        { name="sTRAWBERRY fESTIVAL", desc="STRAWBERRY ITEMS X2", fkind=4, fmul=2  },
+        { name="aQUAS fRESCAS", desc="WATERMELON ITEMS X2", fkind=5, fmul=2  },                
+    }
+    rinfo = roundinfo[1]
     
     buyerinfo = { 
         { name="jUICE bAR", desc="SMOOTHIES\nSCORE DOUBLE" },
@@ -34,11 +48,11 @@ function _init()
         { name="wHOLESALE cLUB", desc="PRESERVED FOODS\nSCORE DOUBLE" },
     }
     fruitinfo = {
-        { name="apple", fnum=64, cbase=8, cdark=2, cbrite=14, vp = 1 },
-        { name="orange", fnum=64, cbase=9, cdark=4, cbrite=10, vp = 2 },
-        { name="pumpkin", fnum=66, cbase=4, cdark=2, cbrite=9, vp = 3 },
-        { name="strawberry", fnum=66, cbase=8, cdark=3, cbrite=14, vp = 4 },
-        { name="watermelon", fnum=68, cbase=8, cdark=2, cbrite=14, vp = 5 },
+        { name="apple", fkind=1, fnum=64, cbase=8, cdark=2, cbrite=14, vp = 1 },
+        { name="orange", fkind=2, fnum=64, cbase=9, cdark=4, cbrite=10, vp = 2 },
+        { name="pumpkin", fkind=3, fnum=66, cbase=4, cdark=2, cbrite=9, vp = 3 },
+        { name="strawberry", fkind=4,fnum=66, cbase=8, cdark=3, cbrite=14, vp = 4 },
+        { name="watermelon", fkind=5, fnum=68, cbase=8, cdark=2, cbrite=14, vp = 5 },
     }
     
     shopitems = {}    
@@ -50,13 +64,13 @@ function _init()
     }
 
     shopitembuilds = {
-        { name="fANCIFIER", price=5, icon=194 },
-        { name="bLENDER", price=8, icon=196 },
-        { name="cLONEjAR", price=10, icon=198 },
-        { name="cANNER", price=6, icon=192 },
-        { name="pIEINATOR", price=6, icon=204 },
-        { name="mANURE", price=8, icon=202 },
-        { name="sORTER", price=6, icon=200 },
+        { name="fANCIFIER", icon=194 },
+        { name="bLENDER",  icon=196 },
+        { name="cLONEjAR", icon=198 },
+        { name="cANNER",  icon=192 },
+        { name="pIEINATOR", icon=204 },
+        { name="mANURE",  icon=202 },
+        { name="sORTER",  icon=200 },
     }
 
     -- read the initial grid from the map
@@ -175,11 +189,13 @@ function fruit_update( f )
 
             else
                 -- Convert fruit to score
-                local vpfruit = score_fruit(f, f.nxcol )                
+                local vpfruit = score_fruit(f, f.nxcol )       
+                
+                printh( "SCORED " .. tostr(vpfruit) )
 
                 vp = vp + vpfruit
                 name = describe_fruit(f) .. " $" .. tostr(vpfruit)
-                spawn_msg( f.sx-20, f.sy-10, name, 10 )
+                spawn_msg( f.sx-20, f.sy-20, name, 10 )
 
                 done = 1
             end
@@ -306,6 +322,7 @@ function process_fruit( f, g, gndx )
         -- canner
         f.fnum = 96
         f.canned = true
+        f.baked = false
     elseif (g.icon == 202) then
         -- manure pile
         f.coutline = 11
@@ -334,20 +351,30 @@ function score_fruit( f, buyer )
     -- start with base value
     local vp = f.vp
 
-    -- debg test
-    if buyer==1 and f.fnum==66 then
-        vp = 10
+    -- do modifiers
+    if buyer==0 then
+        if f.smoothie then
+            vp *= 2 -- juice bar
+        end
+    elseif buyer==1 then
+        if f.baked then
+            vp *= 2 -- bakery
+        end
+    elseif buyer==4 then
+        if f.organic then
+            vp *= 2 -- fancy grocery
+        end
+    elseif buyer==5 then
+        if f.canned then
+            vp *= 2 -- wholesaler
+        end
     end
 
-    -- do modifiers
-    if (buyer==0) and (f.smoothie) then        
-        vp *= 2 -- juice bar
-    elseif (buyer==1) and (f.baked) then        
-        vp *= 2 -- bakery
-    elseif (buyer==4) and (f.organic) then
-        vp *= 2 -- fancy grocery
-    elseif (buyer==5) and (f.canned) then
-        vp *= 2 -- wholesaler
+    -- round modifiers
+    printh ("checking " .. tostr(rinfo.fkind) .. " " .. tostr(f.fkind) )    
+    if f.fkind == rinfo.fkind then
+        vp *= rinfo.fmul
+        printh ("x " .. (rinfo.fmul) .. " vp " .. tostr(vp) )            
     end
     
     return vp    
@@ -378,6 +405,7 @@ function make_fruit( finfo_ndx, col, row, sx, sy, upd )
     local finfo = fruitinfo[finfo_ndx]
     local ff = {
         fnum = finfo.fnum,
+        fkind = finfo.fkind,
         name= finfo.name,
         cbase = finfo.cbase,
         cdark = finfo.cdark,
@@ -534,7 +562,6 @@ end
 
 function open_shop()
 
-
     while #shopitems < 3 do
         add( shopitems, gen_shop_item() )
     end
@@ -542,6 +569,7 @@ function open_shop()
     shopytarg = 70
     shopdone = false
     shopsel=0
+    buildleft = 3
 end
 
 function shop_update()
@@ -564,17 +592,13 @@ function shop_update()
                 -- done button pressed
                 shopytarg = 129        
                 shopdone = true
-            elseif bitem.price <= vp then
+            else
                 -- buy/build an item   
                 shopytarg = 129                     
                 buildx = 3
                 buildy = 3
                 bgx = 64
-                bgy=128
-            else
-                printh( "Cant afford")
-                --spawn_msg( 8 * (shopsel-1)*35, shopy+47, "cANT aFFORD!", 6 ) 
-                spawn_msg( 35, gmy+ shopy, "cANT aFFORD!", 8 ) 
+                bgy=128        
             end
         end    
 
@@ -603,7 +627,7 @@ function shop_update()
             local gg = make_grid( bitem.dx, bitem.dy )            
             gg.icon = bitem.icon
 
-            vp -= bitem.price
+            buildleft -= 1
 
             grid[ grid_ndx(buildx,buildy) ] = gg
             
@@ -624,10 +648,11 @@ function shop_update()
             -- replace the built item
             shopitems[shopsel+1] = gen_shop_item()
 
-            -- shopytarg = 129        
-            -- shopdone = true
-            -- buildx = -1
-            -- printh("Build complete ---- ")
+            if (buildleft==0) then
+                shopytarg = 129        
+                shopdone = true
+                buildx = -1
+            end
 
         elseif (btnp(4)) then
             buildx = -1
@@ -645,10 +670,22 @@ function _update()
     -- drop cursor
     if fruitleft > 0 then fruit_cursor() 
     elseif #fruits == 0 then
-        if (#shopitems == 0) then 
-            open_shop()
+
+        -- Is the game over?
+        local nextr = roundinfo[round+1]
+        if nextr == nil then
+            -- next round
+            round = round + 1
+            rinfo = roundinfo[round]
+            mode = 2
+            fruitleft=1
+            gmytarg = 30*8
+        else
+            if (#shopitems == 0) then 
+                open_shop()
+            end
+            shop_update()    
         end
-        shop_update()    
     end
     
     -- fruit update
@@ -670,6 +707,13 @@ function shop_draw()
     if (shopdone and shopy >= 127) then
         fruitleft = 5
         shopitems = {}
+        
+        -- next round
+        round = round + 1
+        rinfo = roundinfo[round]
+        mode = 2
+        gmytarg = 30*8
+
     end
 
     -- building?
@@ -699,7 +743,7 @@ function shop_draw()
     camera(0,0)
     rectfill( 0, shopy, 34, shopy+10, 13 )
     rectfill( 0, shopy+10, 128, 128, 13 )
-    print( "upgrade", 4, shopy+2, 12 )
+    print( "upgrade " .. tostr(4-buildleft) .. "/3", 4, shopy+2, 12 )
     for ndx, item in ipairs(shopitems) do
         local xx = 8 + (ndx-1) * 35
 
@@ -709,16 +753,12 @@ function shop_draw()
 
         print( item.name, xx-3, shopy+12, 7)
         map( item.mapx, 16, xx, shopy+20, 4, 4 )
-        spr( item.icon, xx+4, shopy+23, 2, 2 )
+        spr( item.icon, xx+4, shopy+23, 2, 2 )        
+    end
 
-        spr( 16, xx+2, shopy+46 )
-        local cc = tostr(item.price)
-        print( cc, xx+13, shopy+48, 0 )
-        local pcol = 7
-        if (item.price > vp) then
-            pcol = 8
-        end
-        print( cc, xx+12, shopy+47, pcol )
+    local nextr = roundinfo[round+1]
+    if (nextr != nil) then
+        print( "Next:" .. nextr.desc, 10, shopy+50, 7 )
     end
 
     -- Done button        
@@ -740,6 +780,29 @@ function draw_scoreinfo()
     print( buyerinfo[slot+1].name, 34, 290, 12 )
 
     print( buyerinfo[slot+1].desc, 40, 300, 7 )
+
+    -- seasonal events
+    if (rinfo != nil) then
+        print( "rOUND " .. tostr(round) .. "/6", 46, 318, 0 )
+
+        print( rinfo.name, 16, 329, 0 )
+        print( rinfo.name, 15, 328, 12 )
+
+        print( rinfo.desc, 18, 335, 7 )
+
+        print( "⬆️ return to game", 30, 355, 7 )
+    else
+        print( "gAME oVER", 46, 318, 0 )
+
+        local s = "final score "
+        print( s, 40, 329, 0 )
+        print( s, 41, 328, 10 )
+
+        print( "--[ " .. tostr(vp) .. " ]--" , 42, 342, 7 )
+        
+        --print( "⬆️ return to game", 30, 355, 7 )
+    end
+
     
 end
 
