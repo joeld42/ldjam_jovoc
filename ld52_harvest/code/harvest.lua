@@ -361,6 +361,11 @@ function gen_shop_item()
         printh( tostr(k) .. " -> " .. tostr(v) )
     end
 
+    -- sorter gets special map
+    if (genitem.icon == 200) then
+        genitem.mapx = 33
+    end
+
     return genitem
 end
 
