@@ -23,7 +23,14 @@ function _init()
     bgy=0
 
     msgs = {}
-
+    
+    buyerinfo = { 
+        { name="sOMETHING", desc="TO BE DETERMINED" },
+        { name="bAKERY", desc="BAKED GOODS\nSCORE DOUBLE"  },
+        { name="fARMERS mARKET", desc="NORMAL SCORING" },
+        { name="fANCY gROCER", desc="FANCY FOODS\nSCORE DOUBLE" },
+        { name="wHOLESALE cLUB", desc="PRESERVED FOODS\nSCORE DOUBLE" },
+    }
     fruitinfo = {
         { name="apple", fnum=64, cbase=8, cdark=2, cbrite=14 },
         { name="orange", fnum=64, cbase=9, cdark=4, cbrite=10 },
@@ -44,6 +51,7 @@ function _init()
         { name="bLENDER", price=8, icon=196 },
         { name="cLONEjAR", price=10, icon=198 },
         { name="cANNER", price=6, icon=192 },
+        { name="sORTER", price=6, icon=200 },
     }
 
     -- read the initial grid from the map
@@ -115,9 +123,25 @@ function fruit_update( f )
                     done = 1
                 else 
                 
-                    -- move to the next grid                    
-                    f.nxcol = f.nxcol + gg.dx
-                    f.nxrow = f.nxrow + gg.dy
+                    -- move to the next grid 
+                    local dx = gg.dx
+                    local dy = gg.dy
+                    if (gg.icon == 200) then
+                        -- for now random sort
+                        local dd = flr(rnd(3))
+                        if dd==0 then 
+                            dx = -1
+                            dy = 0
+                        elseif dd==1 then 
+                            dx = 0
+                            dy = 1
+                        else
+                            dx = 1
+                            dy = 0
+                        end
+                    end
+                    f.nxcol = f.nxcol + dx
+                    f.nxrow = f.nxrow + dy
 
                     -- check if the fruit has visited this spot before
                     if f.visited[gndx] or (f.nxcol < 0) or (f.nxcol > 4) then
@@ -148,18 +172,20 @@ function process_fruit( f, g, gndx )
     if (g.icon == 192) then
         -- canner
         f.fnum = 96
-        f.name = "canned " .. f.name
+        f.name = "canned\n" .. f.name
     elseif (g.icon == 194) then
         -- fancifier
         f.coutline = 10
-        f.name = "fancy " .. f.name
+        f.name = "fancy\n" .. f.name
     elseif (g.icon == 198) then
         -- clone jar
         clone_fruit(f,gndx)
     elseif (g.icon == 196) then
         -- blender
         f.fnum = 98        
-        f.name = f.name .. " smoothie"
+        f.name = f.name .. "\nsmoothie"
+    elseif (g.icon == 200) then
+
     end
 end
 
@@ -170,7 +196,7 @@ function score_fruit( f )
     local p = flr(rnd(3))+1
     vp = vp + p
     name = name .. " $" .. tostr(p)
-    spawn_msg( f.sx-(#name*4), f.sy-10, name, 10 )
+    spawn_msg( f.sx-20, f.sy-10, name, 10 )
 end
 
 
@@ -532,13 +558,33 @@ function shop_draw()
     print( "done", 108, shopy+32, (shopsel==3 and 7 or 5 ) )
 end
 
+function draw_scoreinfo()
+    spr( 167, cx-6, (32*8) -abs(1.0-pulse)*2  )
+
+    local bicon = 139 +slot
+    local sx, sy = (bicon % 16) * 8, flr(bicon \ 16) * 8
+    circfill( 20, 36*8+8, 9, 7 )
+    palt( 7, true )
+    sspr( sx, sy+2, 8, 6, 13, 290, 16, 12 )
+    palt( 7, false )
+    
+    print( buyerinfo[slot+1].name, 35, 291, 0 )
+    print( buyerinfo[slot+1].name, 34, 290, 12 )
+
+    print( buyerinfo[slot+1].desc, 40, 300, 7 )
+    
+end
+
 function _draw()
     
     -- map part
     gmy = lerp( gmy, gmytarg, 0.2 )
     camera( -3, gmy )
     cls(3)
+    
+    palt(0,false)
     map(0,0,0,4)
+    palt(0,true)
 
     for i=0,4 do
         for j=0,4 do
@@ -553,7 +599,11 @@ function _draw()
 
     -- player sprite    
     if (fruitleft > 0 ) then 
-        draw_dropfruit()
+        if (mode==1) then
+            draw_dropfruit()
+        elseif mode==2 then
+            draw_scoreinfo()
+        end
     end
     draw_fruits()
     draw_msgs()
