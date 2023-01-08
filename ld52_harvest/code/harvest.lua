@@ -40,11 +40,11 @@ function _init()
     rinfo = roundinfo[1]
     
     buyerinfo = { 
-        { name="jUICE bAR", desc="SMOOTHIES\nSCORE DOUBLE" },
-        { name="bAKERY", desc="BAKED GOODS\nSCORE DOUBLE"  },
-        { name="fARMERS mARKET", desc="NORMAL SCORING" },
-        { name="fANCY gROCER", desc="ORGANIC FOODS\nSCORE DOUBLE" },
-        { name="wHOLESALE cLUB", desc="PRESERVED FOODS\nSCORE DOUBLE" },
+        { name="jUICE bAR", desc="smoothies x2\nrejects pumpkin\nrejects baked" },
+        { name="bAKERY", desc="baked goods x2\nrejects watermelon\nrejects smoothie"  },
+        { name="fARMERS mARKET", desc="normal scoring" },
+        { name="fANCY gROCER", desc="organic x2\nrejects oranges\nrejects cans" },
+        { name="wHOLESALE cLUB", desc="canned x2\nrejects strawberry\nrejects organic" },
     }
     fruitinfo = {
         { name="apple", fkind=1, fnum=64, cbase=8, cdark=2, cbrite=14, vp = 1 },
@@ -56,10 +56,10 @@ function _init()
     
     shopitems = {}    
     shopitemdirs = {
-        { mapx=17, dx=0, dy=1 },
-        { mapx=21, dx=-1, dy=0 },
-        { mapx=25, dx=1, dy=0 },
-        -- { mapx=29, dx=0, dy=-1 },
+        { mapx=17, mapy=16, dx=0, dy=1 },
+        { mapx=21, mapy=16, dx=-1, dy=0 },
+        { mapx=25, mapy=16, dx=1, dy=0 },
+        --{ mapx=29, mapy=16, dx=0, dy=-1 }, -- up tile
     }
 
     shopitembuilds = {
@@ -169,7 +169,7 @@ function fruit_update( f )
                     local dx = gg.dx
                     local dy = gg.dy
                     if (gg.icon == 200) then
-                        dx, dy = choose_dir( f )
+                        dx, dy = choose_dir( f, gg )
                     end
                     f.nxcol = f.nxcol + dx
                     f.nxrow = f.nxrow + dy
@@ -190,17 +190,23 @@ function fruit_update( f )
             else
                 -- Convert fruit to score
                 local vpfruit = score_fruit(f, f.nxcol )       
-                
-                vp = vp + vpfruit
-                name = describe_fruit(f) .. " $" .. tostr(vpfruit)
+                local mcol = 10
+                if vpfruit==0 then
+                    mcol=8
+                    name = "rejected $0"
+                else
+                    vp = vp + vpfruit
+                    name = describe_fruit(f) .. " $" .. tostr(vpfruit)
+                end
+
                 local offs = 20
                 if ( f.nxcol == 0) then offs=10 
                 elseif ( f.nxcol== 4) then offs=35 end
 
-                printh( "SCORED " .. tostr(vpfruit) )
+                --printh( "SCORED " .. tostr(vpfruit) )
                 sfx( 0 )
 
-                spawn_msg( f.sx-offs, f.sy-20, name, 10 )
+                spawn_msg( f.sx-offs, f.sy-20, name, mcol )
 
                 done = 1
             end
@@ -273,7 +279,7 @@ function predict_score( f )
     local dx = gg.dx
     local dy = gg.dy
     if (gg.icon == 200) then
-        dx, dy = choose_dir( f ) -- recurse
+        dx, dy = choose_dir( f, gg ) -- recurse
     end    
     f.nxcol = x + dx
     f.nxrow = y + dy    
@@ -282,8 +288,8 @@ function predict_score( f )
     
 end
 
-function choose_dir( f )
-    -- for now random sort
+function choose_dir( f, gg )
+
     local dx1, dy1
     local best_score = 0
 
@@ -299,25 +305,31 @@ function choose_dir( f )
             dx = 1
             dy = 0
         end
-        
-        local ff = deepcopy( f )
-        ff.tick = nil
 
-        ff.nxcol = f.nxcol + dx
-        ff.nxrow = f.nxrow + dy
-        ff.visited[ grid_ndx( f.nxcol, f.nxrow)] = true
+        -- skip closed dir
+        --printh( "gg.dx "..tostr(gg.dx).." gg.dy "..tostr(gg.dy).." dd "..tostr(dd).." dx "..tostr(dx).."dy "..tostr(dy) )
+        if (gg.dx==dx) and (gg.dy==dy) then
+            --printh( "Skip dir ".. tostr(dx) .. "  " .. tostr(dy) )
+        else                    
+            local ff = deepcopy( f )
+            ff.tick = nil
 
-        -- add a small random tiebreak
-        local fs = predict_score( ff ) + rnd(0.01)
-        printh( "dir " .. tostr(dx) .. " " .. tostr(dy) .. " score " .. tostr(fs) )
-        if fs > best_score then
-            dx1 = dx
-            dy1 = dy
-            best_score = fs
+            ff.nxcol = f.nxcol + dx
+            ff.nxrow = f.nxrow + dy
+            ff.visited[ grid_ndx( f.nxcol, f.nxrow)] = true
+
+            -- add a small random tiebreak
+            local fs = predict_score( ff ) + rnd(0.01)
+            --printh( "dir " .. tostr(dx) .. " " .. tostr(dy) .. " score " .. tostr(fs) )
+            if fs > best_score then
+                dx1 = dx
+                dy1 = dy
+                best_score = fs
+            end                    
         end
     end
 
-    printh("best score " ..flr(best_score) .. " dxy " .. tostr(dx1) .. "  " ..tostr(dy1) )
+    --printh("best score " ..flr(best_score) .. " dxy " .. tostr(dx1) .. "  " ..tostr(dy1) )
 
     return dx1, dy1
 end
@@ -355,32 +367,48 @@ function score_fruit( f, buyer )
     
     -- start with base value
     local vp = f.vp
+    local reject=1
 
     -- do modifiers
-    if buyer==0 then
+    if buyer==0 then  -- juice bar
         if f.smoothie then
-            vp *= 2 -- juice bar
+            vp *= 2 
         end
-    elseif buyer==1 then
-        if f.baked then
-            vp *= 2 -- bakery
+        if f.fkind==3 or f.baked then
+            reject=0 -- reject baked, pumpkins
         end
-    elseif buyer==3 then
+    elseif buyer==1 then -- bakery
+        if f.baked or f.smoothie then
+            vp *= 2 
+        end
+        if f.fkind==5 then
+            reject=0 -- reject watermelon
+        end
+    elseif buyer==3 then -- fancy grocery
         if f.organic then
-            vp *= 2 -- fancy grocery
+            vp *= 2 
         end
-    elseif buyer==4 then
+        if f.fkind==2 or f.canned then
+            reject=0 -- reject oranges, canned
+        end
+    elseif buyer==4 then -- wholesaler
         if f.canned then
-            vp *= 2 -- wholesaler
+            vp *= 2 
+        end
+        if f.fkind==4 or f.organic then
+            reject=0 -- reject strawberrys, organic
         end
     end
 
     -- round modifiers
-    printh ("checking " .. tostr(rinfo.fkind) .. " " .. tostr(f.fkind) )    
+    --printh ("checking " .. tostr(rinfo.fkind) .. " " .. tostr(f.fkind) )    
     if f.fkind == rinfo.fkind then
         vp *= rinfo.fmul
-        printh ("x " .. (rinfo.fmul) .. " vp " .. tostr(vp) )            
+        --printh ("x " .. (rinfo.fmul) .. " vp " .. tostr(vp) )            
     end
+
+    -- apply reject
+    vp *= reject
     
     return vp    
 end
@@ -554,13 +582,13 @@ function gen_shop_item()
         genitem[k] = v
     end
 
-    for k,v in pairs(genitem) do
-        printh( tostr(k) .. " -> " .. tostr(v) )
-    end
+    -- for k,v in pairs(genitem) do
+    --     printh( tostr(k) .. " -> " .. tostr(v) )
+    -- end
 
     -- sorter gets special map
-    if (genitem.icon == 200) then
-        genitem.mapx = 33
+    if (genitem.icon == 200) then        
+        genitem.mapy = 20
     end
 
     return genitem
@@ -642,7 +670,7 @@ function shop_update()
             for i=0,2 do
                 for j=0,2 do
                     local gx, gy = grid_pos( i, j )
-                    local mt = mget( bitem.mapx + i, 16+j )
+                    local mt = mget( bitem.mapx + i, bitem.mapy+j )
                     mset( buildx*3 + i, 16+buildy*3+j, mt )
                 end
             end    
@@ -739,7 +767,7 @@ function shop_draw()
         rect( bgx-14, bgy-14, bgx+14, bgy+14, 12 )
 
         bitem = shopitems[ shopsel+1 ]
-        map( bitem.mapx, 16, bgx-12, bgy-12, 4, 4 )
+        map( bitem.mapx, bitem.mapy, bgx-12, bgy-12, 4, 4 )
         spr( bitem.icon, bgx-8, bgy-8, 2, 2 )
 
         --spr( gg.icon, gx-8, gy-8, 2, 2 )
@@ -765,7 +793,7 @@ function shop_draw()
         end
 
         print( item.name, xx-3, shopy+12, 7)
-        map( item.mapx, 16, xx, shopy+20, 4, 4 )
+        map( item.mapx, item.mapy, xx, shopy+20, 4, 4 )
         spr( item.icon, xx+4, shopy+23, 2, 2 )        
     end
 
@@ -789,10 +817,10 @@ function draw_scoreinfo()
     sspr( sx, sy+2, 8, 6, 13, 290, 16, 12 )
     palt( 7, false )
     
-    print( buyerinfo[slot+1].name, 35, 291, 0 )
-    print( buyerinfo[slot+1].name, 34, 290, 12 )
+    print( buyerinfo[slot+1].name, 35, 287, 0 )
+    print( buyerinfo[slot+1].name, 34, 286, 12 )
 
-    print( buyerinfo[slot+1].desc, 40, 300, 7 )
+    print( buyerinfo[slot+1].desc, 40, 294, 7 )
 
     -- seasonal events
     if (rinfo != nil) then
