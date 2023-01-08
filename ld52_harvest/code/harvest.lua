@@ -1,3 +1,5 @@
+
+
 function _init()
     slot = 0
     mode = 1 -- 0 = title, 1 = harvest, 2 = game, 3 = scoreboard
@@ -25,17 +27,18 @@ function _init()
     msgs = {}
     
     buyerinfo = { 
-        { name="sOMETHING", desc="TO BE DETERMINED" },
+        { name="jUICE bAR", desc="SMOOTHIES\nSCORE DOUBLE" },
         { name="bAKERY", desc="BAKED GOODS\nSCORE DOUBLE"  },
         { name="fARMERS mARKET", desc="NORMAL SCORING" },
-        { name="fANCY gROCER", desc="FANCY FOODS\nSCORE DOUBLE" },
+        { name="fANCY gROCER", desc="ORGANIC FOODS\nSCORE DOUBLE" },
         { name="wHOLESALE cLUB", desc="PRESERVED FOODS\nSCORE DOUBLE" },
     }
     fruitinfo = {
-        { name="apple", fnum=64, cbase=8, cdark=2, cbrite=14 },
-        { name="orange", fnum=64, cbase=9, cdark=4, cbrite=10 },
-        { name="pumpkin", fnum=66, cbase=4, cdark=2, cbrite=9 },
-        { name="strawberry", fnum=66, cbase=8, cdark=3, cbrite=14 },
+        { name="apple", fnum=64, cbase=8, cdark=2, cbrite=14, vp = 1 },
+        { name="orange", fnum=64, cbase=9, cdark=4, cbrite=10, vp = 2 },
+        { name="pumpkin", fnum=66, cbase=4, cdark=2, cbrite=9, vp = 3 },
+        { name="strawberry", fnum=66, cbase=8, cdark=3, cbrite=14, vp = 4 },
+        { name="watermelon", fnum=68, cbase=8, cdark=2, cbrite=14, vp = 5 },
     }
     
     shopitems = {}    
@@ -51,6 +54,7 @@ function _init()
         { name="bLENDER", price=8, icon=196 },
         { name="cLONEjAR", price=10, icon=198 },
         { name="cANNER", price=6, icon=192 },
+        { name="mANURE", price=8, icon=202 },
         { name="sORTER", price=6, icon=200 },
     }
 
@@ -77,6 +81,29 @@ function _init()
 
     
     fruits={}
+end
+
+-- Save copied tables in `copies`, indexed by original table.
+-- from the internets
+function deepcopy(orig, copies)
+    copies = copies or {}
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        if copies[orig] then
+            copy = copies[orig]
+        else
+            copy = {}
+            copies[orig] = copy
+            for orig_key, orig_value in next, orig, nil do
+                copy[deepcopy(orig_key, copies)] = deepcopy(orig_value, copies)
+            end
+            setmetatable(copy, deepcopy(getmetatable(orig), copies))
+        end
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
 end
 
 function grid_ndx( col, row )
@@ -127,18 +154,7 @@ function fruit_update( f )
                     local dx = gg.dx
                     local dy = gg.dy
                     if (gg.icon == 200) then
-                        -- for now random sort
-                        local dd = flr(rnd(3))
-                        if dd==0 then 
-                            dx = -1
-                            dy = 0
-                        elseif dd==1 then 
-                            dx = 0
-                            dy = 1
-                        else
-                            dx = 1
-                            dy = 0
-                        end
+                        dx, dy = choose_dir( f )
                     end
                     f.nxcol = f.nxcol + dx
                     f.nxrow = f.nxrow + dy
@@ -158,7 +174,12 @@ function fruit_update( f )
 
             else
                 -- Convert fruit to score
-                score_fruit(f)
+                local vpfruit = score_fruit(f, f.nxcol )                
+
+                vp = vp + vpfruit
+                name = describe_fruit(f) .. " $" .. tostr(vpfruit)
+                spawn_msg( f.sx-20, f.sy-10, name, 10 )
+
                 done = 1
             end
         end
@@ -168,36 +189,113 @@ function fruit_update( f )
     
 end
 
+function describe_fruit( f )
+    local name = f.name
+    if f.canned then 
+        name = "canned\n" .. name
+    end
+
+    if f.organic then 
+        name = "organic\n" .. name
+    end
+
+    if f.fancy > 0 then
+        local fnames = { "fancy", "extrafancy", "deluxe", "heirloom", "boutique", "artisanal", "bespoke" }
+        local n = f.fancy
+        if n > #fnames then n = #fnames end
+        name = fnames[n] .. "\n" .. name
+    end
+
+    if f.smoothie then 
+        name = name .. "\nsmoothie"
+    end
+
+    return name
+end
+
+function predict_score( f )
+    return rnd(10)
+end
+
+function choose_dir( f )
+    -- for now random sort
+    local dx1, dy1
+    local best_score = 0
+
+    for dd=0,2 do
+        local dx, dy
+        if dd==0 then 
+            dx = -1
+            dy = 0
+        elseif dd==1 then 
+            dx = 0
+            dy = 1
+        else
+            dx = 1
+            dy = 0
+        end
+        
+        local ff = deepcopy( f )
+        ff.tick = nil
+
+        local fs = predict_score( f )
+        if fs > best_score then
+            dx1 = dx
+            dy1 = dy
+            best_score = fs
+        end
+    end
+
+    printh("best score " ..flr(best_score) .. " dxy" .. tostr(dx1) .. "  " ..tostr(dy1) )
+
+    return dx1, dy1
+end
+
 function process_fruit( f, g, gndx )
     if (g.icon == 192) then
         -- canner
         f.fnum = 96
-        f.name = "canned\n" .. f.name
-    elseif (g.icon == 194) then
-        -- fancifier
-        f.coutline = 10
-        f.name = "fancy\n" .. f.name
+        f.canned = true
+    elseif (g.icon == 202) then
+        -- manure pile
+        f.coutline = 11
+        f.organic = true        
     elseif (g.icon == 198) then
         -- clone jar
         clone_fruit(f,gndx)
     elseif (g.icon == 196) then
         -- blender
-        f.fnum = 98        
-        f.name = f.name .. "\nsmoothie"
+        f.fnum = 98
+        f.smoothie = true
+    elseif (g.icon == 194) then
+        -- fancifier        
+        f.vp = f.vp+1
+        f.fancy += 1
     elseif (g.icon == 200) then
 
     end
 end
 
-function score_fruit( f )
+function score_fruit( f, buyer )
+    
+    -- start with base value
+    local vp = f.vp
 
-    local name = f.name
-
-    local p = flr(rnd(3))+1
-    vp = vp + p
-    name = name .. " $" .. tostr(p)
-    spawn_msg( f.sx-20, f.sy-10, name, 10 )
+    -- do modifiers
+    if (buyer==0) and (f.smoothie) then        
+        vp *= 2 -- juice bar
+    elseif (buyer==2) and (f.baked) then
+        vp *= 2 -- bakery
+    elseif (buyer==4) and (f.organic) then
+        vp *= 2 -- fancy grocery
+    elseif (buyer==5) and (f.canned) then
+        vp *= 2 -- wholesaler
+    end
+    
+    return vp    
 end
+
+
 
 
 function spawn_msg( x,y, msg, c )
@@ -231,8 +329,15 @@ function make_fruit( finfo_ndx, col, row, sx, sy, upd )
         nxcol=col, nxrow=row,        
         sx=sx, sy=sy,
         visited={},
-        vp=1,  
-        delay=0,      
+        vp=finfo.vp,  
+        delay=0,
+
+        -- flags
+        organic=false,
+        smoothie=false,
+        canned=false,
+        fancy=0,
+
         tick=cocreate( fruit_update )
     }
     add( fruits, ff )
