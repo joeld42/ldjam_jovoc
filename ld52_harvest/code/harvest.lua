@@ -54,6 +54,7 @@ function _init()
         { name="bLENDER", price=8, icon=196 },
         { name="cLONEjAR", price=10, icon=198 },
         { name="cANNER", price=6, icon=192 },
+        { name="pIEINATOR", price=6, icon=204 },
         { name="mANURE", price=8, icon=202 },
         { name="sORTER", price=6, icon=200 },
     }
@@ -206,7 +207,11 @@ function describe_fruit( f )
         name = fnames[n] .. "\n" .. name
     end
 
-    if f.smoothie then 
+    if f.smoothie and f.baked then 
+        name = name .. "\nsilk pie"
+    elseif f.baked then
+        name = name .. "\npie"
+    elseif f.smoothie then
         name = name .. "\nsmoothie"
     end
 
@@ -214,7 +219,46 @@ function describe_fruit( f )
 end
 
 function predict_score( f )
-    return rnd(10)
+    
+    local x = f.nxcol
+    local y = f.nxrow
+    if (y > 4) then 
+        return score_fruit( f, x )
+    end
+    
+    local gndx = grid_ndx( x, y)         
+
+    if f.visited[gndx] then
+        return 0
+    end
+
+    if (x < 0) or (x > 4) then
+        -- malfunction
+        return 0
+    end
+
+    local gg = grid[ gndx ]
+    local mul = 1
+    if gg.icon == 198 then
+        -- don't modify fruit, just double the result
+        mul = 2
+    else
+        process_fruit( f, gg, gndx )
+    end
+
+    f.visited[gndx] = true
+
+    -- move to the next grid 
+    local dx = gg.dx
+    local dy = gg.dy
+    if (gg.icon == 200) then
+        dx, dy = choose_dir( f ) -- recurse
+    end    
+    f.nxcol = x + dx
+    f.nxrow = y + dy    
+    return mul * predict_score( f )
+
+    
 end
 
 function choose_dir( f )
@@ -238,7 +282,13 @@ function choose_dir( f )
         local ff = deepcopy( f )
         ff.tick = nil
 
-        local fs = predict_score( f )
+        ff.nxcol = f.nxcol + dx
+        ff.nxrow = f.nxrow + dy
+        ff.visited[ grid_ndx( f.nxcol, f.nxrow)] = true
+
+        -- add a small random tiebreak
+        local fs = predict_score( ff ) + rnd(0.01)
+        printh( "dir " .. tostr(dx) .. " " .. tostr(dy) .. " score " .. tostr(fs) )
         if fs > best_score then
             dx1 = dx
             dy1 = dy
@@ -246,7 +296,7 @@ function choose_dir( f )
         end
     end
 
-    printh("best score " ..flr(best_score) .. " dxy" .. tostr(dx1) .. "  " ..tostr(dy1) )
+    printh("best score " ..flr(best_score) .. " dxy " .. tostr(dx1) .. "  " ..tostr(dy1) )
 
     return dx1, dy1
 end
@@ -267,12 +317,15 @@ function process_fruit( f, g, gndx )
         -- blender
         f.fnum = 98
         f.smoothie = true
+        f.baked = false
+    elseif (g.icon == 204) then        
+        -- pieinator
+        f.baked = true
+        f.fnum = 100
     elseif (g.icon == 194) then
         -- fancifier        
         f.vp = f.vp+1
         f.fancy += 1
-    elseif (g.icon == 200) then
-
     end
 end
 
@@ -281,10 +334,15 @@ function score_fruit( f, buyer )
     -- start with base value
     local vp = f.vp
 
+    -- debg test
+    if buyer==1 and f.fnum==66 then
+        vp = 10
+    end
+
     -- do modifiers
     if (buyer==0) and (f.smoothie) then        
         vp *= 2 -- juice bar
-    elseif (buyer==2) and (f.baked) then
+    elseif (buyer==1) and (f.baked) then        
         vp *= 2 -- bakery
     elseif (buyer==4) and (f.organic) then
         vp *= 2 -- fancy grocery
