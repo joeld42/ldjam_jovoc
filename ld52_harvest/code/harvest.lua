@@ -93,9 +93,10 @@ function _init()
             grid[ grid_ndx(i,j) ] = make_grid( dx, dy )
         end
     end
-
     
     fruits={}
+
+    music( 0 )
 end
 
 -- Save copied tables in `copies`, indexed by original table.
@@ -191,11 +192,16 @@ function fruit_update( f )
                 -- Convert fruit to score
                 local vpfruit = score_fruit(f, f.nxcol )       
                 
-                printh( "SCORED " .. tostr(vpfruit) )
-
                 vp = vp + vpfruit
                 name = describe_fruit(f) .. " $" .. tostr(vpfruit)
-                spawn_msg( f.sx-20, f.sy-20, name, 10 )
+                local offs = 20
+                if ( f.nxcol == 0) then offs=10 
+                elseif ( f.nxcol== 4) then offs=35 end
+
+                printh( "SCORED " .. tostr(vpfruit) )
+                sfx( 0 )
+
+                spawn_msg( f.sx-offs, f.sy-20, name, 10 )
 
                 done = 1
             end
@@ -360,11 +366,11 @@ function score_fruit( f, buyer )
         if f.baked then
             vp *= 2 -- bakery
         end
-    elseif buyer==4 then
+    elseif buyer==3 then
         if f.organic then
             vp *= 2 -- fancy grocery
         end
-    elseif buyer==5 then
+    elseif buyer==4 then
         if f.canned then
             vp *= 2 -- wholesaler
         end
@@ -523,8 +529,9 @@ function fruit_cursor()
     
 
     if (btnp(5)) then
-        
+        sfx(4)
         make_fruit( cfruit,  slot, 0, cx, gmy+4)
+
 
         fruitleft -= 1
 
@@ -587,7 +594,7 @@ function shop_update()
         end
 
         if (btnp(5)) then
-            
+            sfx(1)
             if not bitem then 
                 -- done button pressed
                 shopytarg = 129        
@@ -628,6 +635,7 @@ function shop_update()
             gg.icon = bitem.icon
 
             buildleft -= 1
+            sfx(3)
 
             grid[ grid_ndx(buildx,buildy) ] = gg
             
@@ -655,6 +663,7 @@ function shop_update()
             end
 
         elseif (btnp(4)) then
+            sfx(2)
             buildx = -1
             buildy = -1
             shopytarg = 70
